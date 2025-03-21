@@ -53,8 +53,8 @@ Ensure you have the following installed:
 ### Clone the Repository
 
 ```sh
-git clone https://github.com/kethn-tech/TechTalke-chat-app.git
-cd TechTalke-chat-app
+git clone https://github.com/kethn-tech/TechTalke.git
+cd TechTalke
 ```
 
 ### Install Dependencies
@@ -78,12 +78,12 @@ Create a `.env` file in both the `Client` and `Server` directories and add the f
 
 #### **Client (.env)**
 ```env
-VITE_APP_SERVER_URL=http://localhost:4000
+VITE_APP_SERVER_URL=http://localhost:5173
 ```
 
 #### **Server (.env)**
 ```env
-DATABASE_URL=mongodb://localhost:27017/interactpro
+DATABASE_URL=MONGODB URL
 JWT_KEY=your_jwt_secret_key
 CLIENT_URL=http://localhost:5173
 CLOUDINARY_CLOUD_NAME=YOUR_CLOUDINARY_NAME
@@ -106,7 +106,7 @@ cd Server
 npm start
 ```
 
-The client will run on `http://localhost:3000` and the server on `http://localhost:4000`.
+The client will run on `http://localhost:5173` and the server on `http://localhost:4000`.
 
 ## Folder Structure
 
@@ -152,20 +152,5 @@ Server/
   ├── socket.js
   └── uploads/
 ```
-
-## Contributing
-
-Contributions are welcome! Please follow these steps to contribute:
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature-branch`).
-3. Commit your changes (`git commit -m 'Add new feature'`).
-4. Push to the branch (`git push origin feature-branch`).
-5. Open a pull request.
-
-## License
-
-This project is licensed under the [MIT License](LICENSE). Feel free to use and modify the code for your own purposes.
-
-"# TechTalke-chat-app" 
-"# TechTalke-chat-app"
+"# TechTalke" 
+"# Kcreation`s"
