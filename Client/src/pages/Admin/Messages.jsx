@@ -4,17 +4,8 @@ import { useStore } from '@/store/store';
 import apiClient from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { MessageSquare, ChevronLeft, ChevronRight, Trash2, AlertTriangle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog';
-
+import { ChevronLeft, ChevronRight, Trash2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 const Messages = () => {
   const { userInfo } = useStore();
   const navigate = useNavigate();
@@ -24,16 +15,16 @@ const Messages = () => {
     page: 1,
     limit: 20,
     total: 0,
-    pages: 1
+    pages: 1,
   });
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     // Check if user is admin or moderator
-    if (!userInfo || (userInfo.role !== 'admin' && userInfo.role !== 'moderator')) {
-      toast.error('Access denied. Admin privileges required.');
-      navigate('/chat');
+    if (!userInfo || userInfo.role !== "admin") {
+      toast.error("Access denied. Admin privileges required.");
+      navigate("/chat");
       return;
     }
 
@@ -43,18 +34,18 @@ const Messages = () => {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/admin/messages', {
+      const response = await apiClient.get("/api/admin/messages", {
         params: {
           page: pagination.page,
-          limit: pagination.limit
-        }
+          limit: pagination.limit,
+        },
       });
-      
+
       setMessages(response.data.messages);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error('Error fetching messages:', error);
-      toast.error('Failed to load messages');
+      console.error("Error fetching messages:", error);
+      toast.error("Failed to load messages");
     } finally {
       setLoading(false);
     }
@@ -62,40 +53,22 @@ const Messages = () => {
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pagination.pages) return;
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
-
-  const handleDeleteMessage = async () => {
-    if (!selectedMessage) return;
-    
-    try {
-      await apiClient.delete(`/api/admin/messages/${selectedMessage._id}`);
-      toast.success('Message deleted successfully');
-      setShowDeleteDialog(false);
-      fetchMessages();
-    } catch (error) {
-      console.error('Error deleting message:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete message');
-    }
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const formatMessagePreview = (content) => {
-    if (!content) return 'No content';
-    
+    if (!content) return "No content";
+
     // Handle different message types (text, image, etc.)
-    if (typeof content === 'object' && content.type) {
+    if (typeof content === "object" && content.type) {
       switch (content.type) {
-        case 'image':
-          return '[Image]';
-        case 'file':
-          return '[File]';
-        case 'code':
-          return '[Code Snippet]';
+        case "code":
+          return "[Code Snippet]";
         default:
-          return content.text || 'Unknown content';
+          return content.text || "Unknown content";
       }
     }
-    
+
     // Plain text message
     return content.length > 100 ? `${content.substring(0, 100)}...` : content;
   };
@@ -124,8 +97,7 @@ const Messages = () => {
             Back to Dashboard
           </Button>
         </motion.div>
-
-        {/* Messages Table */}
+        Messages Table
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -270,63 +242,6 @@ const Messages = () => {
           )}
         </motion.div>
       </div>
-
-      {/* Delete Message Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="bg-dark-primary border-dark-accent/30 text-dark-text">
-          <DialogHeader>
-            <DialogTitle>Delete Message</DialogTitle>
-            <DialogDescription className="text-gray-400">
-              Are you sure you want to delete this message? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            {selectedMessage && (
-              <div className="p-4 rounded-lg bg-dark-accent/10 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
-                    {selectedMessage.sender?.firstName?.charAt(0) ||
-                      selectedMessage.sender?.email?.charAt(0)?.toUpperCase() ||
-                      "?"}
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {selectedMessage.sender?.firstName &&
-                      selectedMessage.sender?.lastName
-                        ? `${selectedMessage.sender.firstName} ${selectedMessage.sender.lastName}`
-                        : selectedMessage.sender?.email?.split("@")[0] ||
-                          "Unknown"}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {new Date(selectedMessage.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-                <div className="p-3 rounded bg-dark-accent/20 text-gray-300">
-                  {formatMessagePreview(selectedMessage.content)}
-                </div>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-              className="hover:bg-dark-accent/30 border border-dark-accent/30 bg-gray-800 text-slate-200"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteMessage}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Message
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

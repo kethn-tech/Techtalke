@@ -4,8 +4,8 @@ import { useStore } from '@/store/store';
 import apiClient from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Users, MessageSquare, UserCog, BarChart3, Shield, UserX, Group } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Users, UserCog, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const { userInfo } = useStore();
@@ -15,9 +15,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Check if user is admin
-    if (!userInfo || userInfo.role !== 'admin') {
-      toast.error('Access denied. Admin privileges required.');
-      navigate('/chat');
+    if (!userInfo || userInfo.role !== "admin") {
+      toast.error("Access denied. Admin privileges required.");
+      navigate("/chat");
       return;
     }
 
@@ -25,11 +25,11 @@ const Dashboard = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get('/api/admin/dashboard-stats');
+        const response = await apiClient.get("/api/admin/dashboard-stats");
         setStats(response.data.stats);
       } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        toast.error('Failed to load dashboard statistics');
+        console.error("Error fetching dashboard stats:", error);
+        toast.error("Failed to load dashboard statistics");
       } finally {
         setLoading(false);
       }
@@ -46,13 +46,6 @@ const Dashboard = () => {
       color: "from-blue-500 to-blue-600",
       onClick: () => navigate("/admin/users"),
     },
-    {
-      title: "Total Messages",
-      value: stats?.totalMessages || 0,
-      icon: <MessageSquare className="h-8 w-8 text-green-500" />,
-      color: "from-green-500 to-green-600",
-      onClick: () => navigate("/admin/messages"),
-    },
   ];
 
   const adminActions = [
@@ -61,12 +54,6 @@ const Dashboard = () => {
       description: "View, edit roles, and manage user accounts",
       icon: <UserCog className="h-6 w-6" />,
       onClick: () => navigate("/admin/users"),
-    },
-    {
-      title: "Moderate Messages",
-      description: "Review and moderate message content",
-      icon: <MessageSquare className="h-6 w-6" />,
-      onClick: () => navigate("/admin/messages"),
     },
     {
       title: "Return to Chat",
@@ -88,7 +75,7 @@ const Dashboard = () => {
             Admin Dashboard
           </h1>
           <p className="text-gray-400">
-            Manage users, messages, and monitor system activity
+            Manage users and monitor system activity
           </p>
         </motion.div>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Smile, Paperclip, Send, Image, Mic, Code } from "lucide-react";
+import { Smile, Send, Code } from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
 import { useStore } from "@/store/store";
 import { useSocket } from "@/context/SocketContext";
@@ -155,7 +155,6 @@ const MessageBar = () => {
             >
               <Code size={20} />
             </Button>
-
           </div>
 
           <div className="flex-1">
@@ -183,6 +182,9 @@ const MessageBar = () => {
                   }}
                   textareaClassName="focus:outline-none custom-scrollbar"
                   preClassName={`language-${language} custom-scrollbar`}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && handleSendMessage()
+                  }
                 />
               </div>
             ) : (

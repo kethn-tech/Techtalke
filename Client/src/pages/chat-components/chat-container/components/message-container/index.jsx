@@ -8,12 +8,24 @@ import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 import "prismjs/themes/prism-tomorrow.css";
+import { toast } from "react-hot-toast"; // Added missing import
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"; // Added missing imports
+import { Button } from "@/components/ui/button"; // Added missing import
+import { Trash2 } from "lucide-react"; // Added missing icon import
 
 const MessageContainer = () => {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-  
+  const [selectedMessage, setSelectedMessage] = useState(null); // Added missing state
+
   const {
     selectedChatData,
     userInfo,
@@ -21,10 +33,42 @@ const MessageContainer = () => {
     selectedChatMessages,
     setSelectedChatMessages,
   } = useStore();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const fetchMessages = async () => {
+    try {
+      const res = await apiClient.post(
+        "/api/message/get-messages",
+        { id: selectedChatData._id },
+        { withCredentials: true }
+      );
+      if (res.data.chat) {
+        setSelectedChatMessages(res.data.chat);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // Function to get group messages if needed
+  const getGroupMessages = async () => {
+    try {
+      const res = await apiClient.post(
+        "/api/message/get-group-messages",
+        { id: selectedChatData._id },
+        { withCredentials: true }
+      );
+      if (res.data.chat) {
+        setSelectedChatMessages(res.data.chat);
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
 
@@ -33,43 +77,34 @@ const MessageContainer = () => {
   }, [selectedChatMessages]);
 
   useEffect(() => {
-    const getMessages = async () => {
-      try {
-        const res = await apiClient.post(
-          "/api/message/get-messages",
-          { id: selectedChatData._id },
-          { withCredentials: true }
-        );
-        if (res.data.chat) {
-          setSelectedChatMessages(res.data.chat);
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
-    const getGroupMessages = async () => {
-      try {
-        const res = await apiClient.get(
-          `/api/group/${selectedChatData._id}/messages`,
-          { withCredentials: true }
-        );
-        if (res.data.messages) {
-          setSelectedChatMessages(res.data.messages);
-        }
-      } catch (err) {
-        console.log(err);
-      }
-    };
-
     if (selectedChatData) {
       if (selectedChatType === "dm") {
-        getMessages();
+        fetchMessages();
       } else if (selectedChatType === "group") {
         getGroupMessages();
       }
     }
   }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
+
+  // Function to handle opening delete dialog
+  const handleOpenDeleteDialog = (message) => {
+    setSelectedMessage(message);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+
+    try {
+      await apiClient.delete(`/api/admin/messages/${selectedMessage._id}`);
+      toast.success("Message deleted successfully");
+      setShowDeleteDialog(false);
+      fetchMessages();
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      toast.error(error.response?.data?.message || "Failed to delete message");
+    }
+  };
 
   const handleCopy = (messageId, content) => {
     navigator.clipboard.writeText(content);
@@ -78,6 +113,12 @@ const MessageContainer = () => {
     setTimeout(() => {
       setCopiedMessageId(null);
     }, 2000);
+  };
+
+  // Function to format message preview
+  const formatMessagePreview = (content) => {
+    if (!content) return "Empty message";
+    return content.length > 100 ? content.substring(0, 100) + "..." : content;
   };
 
   const filteredMessages = selectedChatMessages;
@@ -89,9 +130,12 @@ const MessageContainer = () => {
       const showDate = lastDate !== messageDate;
       lastDate = messageDate;
 
-      const isSender = selectedChatType === 'dm' ? 
-        (typeof message.sender === 'object' ? message.sender._id === userInfo._id : message.sender === userInfo._id) : 
-        message.sender._id === userInfo._id;
+      const isSender =
+        selectedChatType === "dm"
+          ? typeof message.sender === "object"
+            ? message.sender._id === userInfo._id
+            : message.sender === userInfo._id
+          : message.sender._id === userInfo._id;
       const isCopied = copiedMessageId === message._id;
 
       return (
@@ -108,7 +152,9 @@ const MessageContainer = () => {
             </div>
           )}
           <div
-            className={`flex ${isSender ? "justify-end" : "justify-start"} w-full my-1`}
+            className={`flex ${
+              isSender ? "justify-end" : "justify-start"
+            } w-full my-1`}
           >
             <div
               className={`relative max-w-[70%] px-4 py-2.5 rounded-2xl ${
@@ -119,8 +165,17 @@ const MessageContainer = () => {
                   : message.messageType === "code"
                   ? "bg-[#1E1E1E] text-white"
                   : "bg-dark-accent/30 text-dark-text backdrop-blur-sm"
-              } transition-all duration-200 hover:shadow-lg`}
+              } transition-all duration-200 hover:shadow-lg group`}
             >
+              {/* Added delete button */}
+              {isSender && (
+                <button
+                  onClick={() => handleOpenDeleteDialog(message)}
+                  className="absolute -right-8 top-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </button>
+              )}
               {selectedChatType === "group" && !isSender && (
                 <div className="text-xs text-dark-muted mb-1">
                   {message.sender.firstName} {message.sender.lastName}
@@ -178,13 +233,66 @@ const MessageContainer = () => {
       ref={containerRef}
       className="flex-1 bg-transparent text-dark-text flex flex-col p-6 overflow-y-auto custom-scrollbar"
     >
-      <div className="mb-4">
-        
-      </div>
+      <div className="mb-4"></div>
       <div className="flex flex-col space-y-2 min-h-0">
         {renderMessages()}
         <div ref={messagesEndRef} className="h-0" />
       </div>
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="bg-dark-primary border-dark-accent/30 text-dark-text">
+          <DialogHeader>
+            <DialogTitle>Delete Message</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Are you sure you want to delete this message? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedMessage && (
+              <div className="p-4 rounded-lg bg-dark-accent/10 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    {selectedMessage.sender?.firstName?.charAt(0) ||
+                      selectedMessage.sender?.email?.charAt(0)?.toUpperCase() ||
+                      "?"}
+                  </div>
+                  <div>
+                    <div className="font-medium">
+                      {selectedMessage.sender?.firstName &&
+                      selectedMessage.sender?.lastName
+                        ? `${selectedMessage.sender.firstName} ${selectedMessage.sender.lastName}`
+                        : selectedMessage.sender?.email?.split("@")[0] ||
+                          "Unknown"}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(selectedMessage.timeStamp).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3 rounded bg-dark-accent/20 text-gray-300">
+                  {formatMessagePreview(selectedMessage.content)}
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              className="hover:bg-dark-accent/30 border border-dark-accent/30 bg-gray-800 text-slate-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteMessage}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Message
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

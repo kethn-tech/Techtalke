@@ -4,9 +4,16 @@ import { useStore } from '@/store/store';
 import apiClient from '@/lib/apiClient';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Users as UsersIcon, Search, ChevronLeft, ChevronRight, Shield, UserX, UserCheck, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {
+  Users as Search,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  UserCheck,
+  Trash2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -14,13 +21,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 const Users = () => {
   const { userInfo } = useStore();
@@ -31,19 +38,19 @@ const Users = () => {
     page: 1,
     limit: 10,
     total: 0,
-    pages: 1
+    pages: 1,
   });
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('');
+  const [selectedRole, setSelectedRole] = useState("");
 
   useEffect(() => {
     // Check if user is admin
-    if (!userInfo || userInfo.role !== 'admin') {
-      toast.error('Access denied. Admin privileges required.');
-      navigate('/chat');
+    if (!userInfo || userInfo.role !== "admin") {
+      toast.error("Access denied. Admin privileges required.");
+      navigate("/chat");
       return;
     }
 
@@ -53,19 +60,19 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/admin/users', {
+      const response = await apiClient.get("/api/admin/users", {
         params: {
           page: pagination.page,
           limit: pagination.limit,
-          search: searchQuery
-        }
+          search: searchQuery,
+        },
       });
-      
+
       setUsers(response.data.users);
       setPagination(response.data.pagination);
     } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
+      console.error("Error fetching users:", error);
+      toast.error("Failed to load users");
     } finally {
       setLoading(false);
     }
@@ -73,43 +80,45 @@ const Users = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
     // The useEffect will trigger the API call
   };
 
   const handlePageChange = (newPage) => {
     if (newPage < 1 || newPage > pagination.pages) return;
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   const handleDeleteUser = async () => {
     if (!selectedUser) return;
-    
+
     try {
       await apiClient.delete(`/api/admin/users/${selectedUser._id}`);
-      toast.success('User deleted successfully');
+      toast.success("User deleted successfully");
       setShowDeleteDialog(false);
       fetchUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete user');
+      console.error("Error deleting user:", error);
+      toast.error(error.response?.data?.message || "Failed to delete user");
     }
   };
 
   const handleUpdateRole = async () => {
     if (!selectedUser || !selectedRole) return;
-    
+
     try {
-      await apiClient.put('/api/admin/users/update-role', {
+      await apiClient.put("/api/admin/users/update-role", {
         userId: selectedUser._id,
-        role: selectedRole
+        role: selectedRole,
       });
       toast.success(`User role updated to ${selectedRole}`);
       setShowRoleDialog(false);
       fetchUsers();
     } catch (error) {
-      console.error('Error updating user role:', error);
-      toast.error(error.response?.data?.message || 'Failed to update user role');
+      console.error("Error updating user role:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to update user role"
+      );
     }
   };
 
@@ -214,8 +223,6 @@ const Users = () => {
                           className={`px-2 py-1 rounded-full text-xs ${
                             user.role === "admin"
                               ? "bg-red-500/20 text-red-400"
-                              : user.role === "moderator"
-                              ? "bg-yellow-500/20 text-yellow-400"
                               : "bg-green-500/20 text-green-400"
                           }`}
                         >
@@ -392,7 +399,7 @@ const Users = () => {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 ">
               <Button
                 variant={selectedRole === "user" ? "default" : "outline"}
                 className={
@@ -404,18 +411,6 @@ const Users = () => {
               >
                 <UserCheck className="h-4 w-4 mr-2" />
                 User
-              </Button>
-              <Button
-                variant={selectedRole === "moderator" ? "default" : "outline"}
-                className={
-                  selectedRole === "moderator"
-                    ? "bg-yellow-600 hover:bg-yellow-700"
-                    : "hover:bg-dark-accent/30 text-slate-950"
-                }
-                onClick={() => setSelectedRole("moderator")}
-              >
-                <Shield className="h-4 w-4 mr-2" />
-                Moderator
               </Button>
               <Button
                 variant={selectedRole === "admin" ? "default" : "outline"}
@@ -442,6 +437,11 @@ const Users = () => {
             <Button
               onClick={handleUpdateRole}
               className="bg-blue-600 hover:bg-blue-700"
+              onkeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleUpdateRole();
+                }
+              }}
             >
               Save Changes
             </Button>

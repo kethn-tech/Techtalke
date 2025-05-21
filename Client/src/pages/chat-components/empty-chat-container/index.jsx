@@ -33,7 +33,7 @@ const EmptyChatContainer = () => {
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ repeat: Infinity, repeatType: "mirror", duration: 1 }}
-            className="bg-yellow-400 text-black text-xs font-semibold px-2 py-1 rounded-md"
+            className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-xs font-semibold px-2 py-1 rounded-md shadow-glow-sm"
           >
             Coming Soon
           </motion.span>
@@ -44,8 +44,13 @@ const EmptyChatContainer = () => {
   ];
 
   return (
-    <div className="w-full h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 h-full">
+    <div className="w-full h-screen bg-gradient-to-b from-gray-950 to-gray-900 text-white overflow-hidden relative">
+      {/* Background patterns */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.08),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(147,51,234,0.08),transparent_50%)]" />
+      <div className="absolute inset-0 backdrop-blur-[1px]" />
+
+      <div className="max-w-7xl mx-auto px-4 h-full relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,7 +66,7 @@ const EmptyChatContainer = () => {
               className="text-5xl md:text-6xl font-bold tracking-tight"
             >
               Welcome to{" "}
-              <span className="bg-gradient-to-r from-blue-500 to-violet-500 text-transparent bg-clip-text">
+              <span className="bg-gradient-to-r from-blue-500 via-violet-500 to-purple-500 text-transparent bg-clip-text animate-gradient">
                 TechTalke
               </span>
             </motion.h1>
@@ -80,7 +85,9 @@ const EmptyChatContainer = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 shadow-glow"
               onClick={() => setOpenNewContactModal(true)}
             >
               Start Chatting
@@ -101,12 +108,15 @@ const EmptyChatContainer = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 + index * 0.2 }}
-                className="bg-gray-800/50 backdrop-blur-sm p-6 rounded-xl border border-gray-700/50 hover:border-blue-500/50 transition-colors duration-200"
+                whileHover={{ scale: 1.02, translateY: -5 }}
+                className="bg-dark-accent/10 backdrop-blur-sm p-6 rounded-xl border border-dark-accent/30 hover:border-blue-500/50 transition-all duration-300 shadow-glow-sm group"
               >
-                <div className="p-3 bg-blue-500/10 rounded-lg w-fit mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500/20 to-violet-500/20 rounded-lg w-fit mb-4 group-hover:from-blue-500/30 group-hover:to-violet-500/30 transition-all duration-300">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <h3 className="text-lg font-semibold mb-2 bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
+                  {feature.title}
+                </h3>
                 <p className="text-gray-400 text-sm">{feature.description}</p>
               </motion.div>
             ))}
