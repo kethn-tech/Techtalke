@@ -95,6 +95,13 @@ const Auth = () => {
     }
   };
 
+  const handleGithubLogin = () => {
+    window.location.href = "http://localhost:4000/api/auth/github";
+  };
+  const handleLinkedinLogin = () => {
+    window.location.href = "http://localhost:4000/api/auth/linkedin";
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -274,6 +281,7 @@ const Auth = () => {
                 <Button
                   variant="outline"
                   className="bg-gray-800/30 border-gray-700 text-gray-300 hover:bg-gray-700/50"
+                  onClick={handleGithubLogin}
                 >
                   <FaGithub className="h-4 w-4 mr-2" />
                   Github
@@ -281,6 +289,7 @@ const Auth = () => {
                 <Button
                   variant="outline"
                   className="bg-gray-800/30 border-gray-700 text-gray-300 hover:bg-gray-700/50"
+                  onClick={handleLinkedinLogin}
                 >
                   <FaLinkedin className="h-4 w-4 mr-2" />
                   LinkedIn

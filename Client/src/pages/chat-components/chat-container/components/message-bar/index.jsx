@@ -30,15 +30,15 @@ const MessageBar = () => {
   const socket = useSocket();
   const fileInputRef = useRef();
 
-  const languageOptions = [
-    { value: "javascript", label: "JavaScript" },
-    { value: "typescript", label: "TypeScript" },
-    { value: "python", label: "Python" },
-    { value: "java", label: "Java" },
-    { value: "c", label: "C" },
-    { value: "cpp", label: "C++" },
-    { value: "go", label: "Go" },
-  ];
+  // const languageOptions = [
+  //   { value: "javascript", label: "JavaScript" },
+  //   { value: "typescript", label: "TypeScript" },
+  //   { value: "python", label: "Python" },
+  //   { value: "java", label: "Java" },
+  //   { value: "c", label: "C" },
+  //   { value: "cpp", label: "C++" },
+  //   { value: "go", label: "Go" },
+  // ];
 
   const handleEmojiClick = (emojiData) => {
     setMessage((prevMessage) => prevMessage + emojiData.emoji);
@@ -93,7 +93,7 @@ const MessageBar = () => {
       className="p-4 bg-[#1a1b1e]/95 backdrop-blur-xl border-t border-[#2a2b2e] relative z-10"
     >
       <div className="flex flex-col gap-2">
-        {isCodeMode && (
+        {/* {isCodeMode && (
           <div className="flex items-center gap-2 bg-[#2a2b2e] rounded-t-xl p-2">
             <select
               value={language}
@@ -106,9 +106,9 @@ const MessageBar = () => {
                 </option>
               ))}
             </select>
-            <span className="text-sm text-gray-400">Code Mode</span>
+            <span className="text-sm text-gray-400">Code Formatting</span>
           </div>
-        )}
+        )} */}
 
         <div className="flex items-center gap-2 bg-[#2a2b2e] rounded-xl p-2">
           <div className="flex items-center gap-1">
@@ -180,11 +180,12 @@ const MessageBar = () => {
                     lineHeight: "1.5",
                     color: "#f1f1f1",
                   }}
-                  textareaClassName="focus:outline-none custom-scrollbar"
                   preClassName={`language-${language} custom-scrollbar`}
                   onKeyDown={(e) =>
                     e.key === "Enter" && !e.shiftKey && handleSendMessage()
                   }
+                  placeholder="Type your code here..."
+                  className="bg-[#1a1b1e] border-0 text-gray-100 placeholder:text-gray-500 focus-visible:ring-1 focus-visible:ring-indigo-500/20 rounded-lg py-2.5"
                 />
               </div>
             ) : (
@@ -197,6 +198,7 @@ const MessageBar = () => {
                 onKeyDown={(e) =>
                   e.key === "Enter" && !e.shiftKey && handleSendMessage()
                 }
+                autoFocus
               />
             )}
           </div>

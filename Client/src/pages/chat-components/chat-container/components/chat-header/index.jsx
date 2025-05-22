@@ -1,17 +1,61 @@
-import React, { useState } from 'react';
-import { useStore } from '@/store/store';
-import { UserCircle2, Search } from 'lucide-react';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import ProfileView from '@/pages/chat-components/contacts-container/components/profile-view';
-import { Input } from '@/components/ui/input';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { useStore } from "@/store/store";
+import { UserCircle2, Search } from "lucide-react";
+import { Avatar, AvatarImage } from "@/components/ui/avatar";
+import ProfileView from "@/pages/chat-components/contacts-container/components/profile-view";
+import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
 import apiClient from "@/lib/apiClient";
 import { MdCancel } from "react-icons/md";
+
 const ChatHeader = () => {
   const { selectedChatData, setSelectedChatMessages } = useStore();
   const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isUserAlone, setIsUserAlone] = useState(true); // Track if user is alone/available
+
+  // Check if user is alone (you can implement your own logic here)
+  useEffect(() => {
+    const checkUserStatus = () => {
+      // Example logic - you can replace this with your actual implementation
+      // This could check for:
+      // - Active calls
+      // - Do not disturb mode
+      // - Away status
+      // - Other activities
+
+      // For demonstration, using document visibility API
+      const isDocumentVisible = !document.hidden;
+      const hasRecentActivity =
+        Date.now() - (localStorage.getItem("lastActivity") || 0) < 300000; // 5 minutes
+
+      setIsUserAlone(isDocumentVisible && hasRecentActivity);
+    };
+
+    // Update activity timestamp
+    const updateActivity = () => {
+      localStorage.setItem("lastActivity", Date.now().toString());
+      checkUserStatus();
+    };
+
+    // Listen for user activity
+    document.addEventListener("mousemove", updateActivity);
+    document.addEventListener("keypress", updateActivity);
+    document.addEventListener("visibilitychange", checkUserStatus);
+
+    // Check status initially and periodically
+    checkUserStatus();
+    const interval = setInterval(checkUserStatus, 60000); // Check every minute
+
+    return () => {
+      document.removeEventListener("mousemove", updateActivity);
+      document.removeEventListener("keypress", updateActivity);
+      document.removeEventListener("visibilitychange", checkUserStatus);
+      clearInterval(interval);
+    };
+  }, []);
+
   const handleSearch = async (query) => {
     if (!selectedChatData?._id) return;
 
@@ -82,8 +126,18 @@ const ChatHeader = () => {
               transition={{ repeat: Infinity, duration: 2 }}
               className="flex items-center gap-1.5"
             >
-              <div className="w-2 h-2 rounded-full bg-green-500 shadow-glow-sm" />
-              <p className="text-sm text-green-400">Online</p>
+              <div
+                className={`w-2 h-2 rounded-full shadow-glow-sm transition-colors duration-300 ${
+                  isUserAlone ? "bg-green-500" : "bg-gray-500"
+                }`}
+              />
+              <p
+                className={`text-sm transition-colors duration-300 ${
+                  isUserAlone ? "text-green-400" : "text-gray-400"
+                }`}
+              >
+                {isUserAlone ? "Online" : "Offline"}
+              </p>
             </motion.div>
           </div>
         </motion.button>
