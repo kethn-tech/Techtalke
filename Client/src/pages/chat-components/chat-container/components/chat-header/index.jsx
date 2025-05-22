@@ -6,7 +6,7 @@ import ProfileView from '@/pages/chat-components/contacts-container/components/p
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from "@/lib/apiClient";
-
+import { MdCancel } from "react-icons/md";
 const ChatHeader = () => {
   const { selectedChatData, setSelectedChatMessages } = useStore();
   const [showProfile, setShowProfile] = useState(false);
@@ -45,6 +45,10 @@ const ChatHeader = () => {
       animate={{ opacity: 1, y: 0 }}
       className="p-4 border-b border-dark-accent/30 backdrop-blur-sm bg-dark-accent/5"
     >
+      <MdCancel
+        className="absolute top-4 right-0.5 text-2xl cursor-pointer text-dark-muted opacity-0 hover:opacity-100 hover:text-blue-400 transition-opacity duration-300"
+        onClick={() => (window.location.href = "/chat")}
+      />
       <div className="flex items-center justify-between gap-3">
         <motion.button
           whileHover={{ scale: 1.02 }}
@@ -84,7 +88,7 @@ const ChatHeader = () => {
           </div>
         </motion.button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mt-5">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}

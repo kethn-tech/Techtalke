@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import apiClient from "@/lib/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { Camera, Trash2, Mail, User, UserCircle2 } from "lucide-react";
-
+import { MdCancel } from "react-icons/md";
 const Profile = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -84,8 +84,8 @@ const Profile = () => {
       try {
         const response = await apiClient.post("/api/upload-image", formData, {
           headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+            "Content-Type": "multipart/form-data",
+          },
         });
         if (response.status === 200 && response.data.image) {
           setUserInfo({ ...userInfo, image: response.data.image });
@@ -211,6 +211,10 @@ const Profile = () => {
               {/* Right Column - Form */}
               <div className="flex-1 space-y-8">
                 <div className="space-y-6">
+                  <MdCancel
+                    className="absolute top-4 right-0.5 text-2xl cursor-pointer text-dark-muted opacity-0 hover:opacity-100 hover:text-blue-400 transition-opacity duration-300"
+                    onClick={() => (window.location.href = "/chat")}
+                  />
                   <h3 className="text-2xl font-bold text-white">
                     Profile Information
                   </h3>
