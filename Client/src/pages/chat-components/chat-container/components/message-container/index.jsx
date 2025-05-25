@@ -9,7 +9,7 @@ import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-java";
 import "prismjs/themes/prism-tomorrow.css";
-import { toast } from "react-hot-toast"; // Added missing import
+import { toast } from "react-hot-toast";
 import {
   Dialog,
   DialogContent,
@@ -17,15 +17,15 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"; // Added missing imports
-import { Button } from "@/components/ui/button"; // Added missing import
-import { Trash2 } from "lucide-react"; // Added missing icon import
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
 const MessageContainer = () => {
   const messagesEndRef = useRef(null);
   const containerRef = useRef(null);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-  const [selectedMessage, setSelectedMessage] = useState(null); // Added missing state
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   const {
     selectedChatData,
@@ -82,12 +82,12 @@ const MessageContainer = () => {
 
     try {
       // Emit delete message event to socket
-      socket.emit('deleteMessage', {
+      socket.emit("deleteMessage", {
         messageId: selectedMessage._id,
         sender: selectedMessage.sender._id,
-        recipient: selectedMessage.recipient._id
+        recipient: selectedMessage.recipient._id,
       });
-      
+
       setShowDeleteDialog(false);
       toast.success("Message deleted successfully");
     } catch (error) {
@@ -111,11 +111,9 @@ const MessageContainer = () => {
     return content.length > 100 ? content.substring(0, 100) + "..." : content;
   };
 
-  const filteredMessages = selectedChatMessages;
-
   const renderMessages = () => {
     let lastDate = null;
-    return filteredMessages.map((message, index) => {
+    return selectedChatMessages.map((message, index) => {
       const messageDate = moment(message.timeStamp).format("DD-MM-YYYY");
       const showDate = lastDate !== messageDate;
       lastDate = messageDate;
@@ -157,7 +155,7 @@ const MessageContainer = () => {
                   : "bg-dark-accent/30 text-dark-text backdrop-blur-sm"
               } transition-all duration-200 hover:shadow-lg group`}
             >
-              {/* Added delete button */}
+              {/* Delete button for sender's messages */}
               {isSender && (
                 <button
                   onClick={() => handleOpenDeleteDialog(message)}
@@ -166,11 +164,15 @@ const MessageContainer = () => {
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </button>
               )}
+
+              {/* Show sender name in group chats */}
               {selectedChatType === "group" && !isSender && (
                 <div className="text-xs text-dark-muted mb-1">
                   {message.sender.firstName} {message.sender.lastName}
                 </div>
               )}
+
+              {/* Code message rendering */}
               {message.messageType === "code" ? (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
@@ -208,6 +210,8 @@ const MessageContainer = () => {
                   {message.content}
                 </p>
               )}
+
+              {/* Message timestamp */}
               <span className="block text-right text-xs opacity-70 mt-1">
                 {moment(message.timeStamp).format("HH:mm")}
               </span>
@@ -223,11 +227,13 @@ const MessageContainer = () => {
       ref={containerRef}
       className="flex-1 bg-transparent text-dark-text flex flex-col p-6 overflow-y-auto custom-scrollbar"
     >
-      <div className="mb-4"></div>
+      {/* Messages Section */}
       <div className="flex flex-col space-y-2 min-h-0">
         {renderMessages()}
         <div ref={messagesEndRef} className="h-0" />
       </div>
+
+      {/* Delete Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent className="bg-dark-primary border-dark-accent/30 text-dark-text">
           <DialogHeader>
