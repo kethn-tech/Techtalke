@@ -143,7 +143,7 @@ const Auth = () => {
             <marquee behavior="scroll" direction="" scrollamount="7">
               <h1 className="text-sm font-bold text-center text-gray-300   ">
                 Please use your <span className="text-blue-500">TeckTalke</span>{" "}
-                mail id to signin or signup .
+                Mail id to Signin Or Signup .
               </h1>
             </marquee>
             <div className="flex justify-center mb-8">

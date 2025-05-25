@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import moment from "moment";
 import { useStore } from "@/store/store";
+import { useSocket } from "@/context/SocketContext";
 import apiClient from "@/lib/apiClient";
 import { motion } from "framer-motion";
 import { highlight, languages } from "prismjs";
@@ -56,22 +57,6 @@ const MessageContainer = () => {
     }
   };
 
-  // Function to get group messages if needed
-  const getGroupMessages = async () => {
-    try {
-      const res = await apiClient.post(
-        "/api/message/get-group-messages",
-        { id: selectedChatData._id },
-        { withCredentials: true }
-      );
-      if (res.data.chat) {
-        setSelectedChatMessages(res.data.chat);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   useEffect(() => {
     scrollToBottom();
   }, [selectedChatMessages]);
@@ -80,8 +65,6 @@ const MessageContainer = () => {
     if (selectedChatData) {
       if (selectedChatType === "dm") {
         fetchMessages();
-      } else if (selectedChatType === "group") {
-        getGroupMessages();
       }
     }
   }, [selectedChatData, selectedChatType, setSelectedChatMessages]);
@@ -92,17 +75,24 @@ const MessageContainer = () => {
     setShowDeleteDialog(true);
   };
 
+  const socket = useSocket();
+
   const handleDeleteMessage = async () => {
     if (!selectedMessage) return;
 
     try {
-      await apiClient.delete(`/api/admin/messages/${selectedMessage._id}`);
-      toast.success("Message deleted successfully");
+      // Emit delete message event to socket
+      socket.emit('deleteMessage', {
+        messageId: selectedMessage._id,
+        sender: selectedMessage.sender._id,
+        recipient: selectedMessage.recipient._id
+      });
+      
       setShowDeleteDialog(false);
-      fetchMessages();
+      toast.success("Message deleted successfully");
     } catch (error) {
       console.error("Error deleting message:", error);
-      toast.error(error.response?.data?.message || "Failed to delete message");
+      toast.error("Failed to delete message");
     }
   };
 

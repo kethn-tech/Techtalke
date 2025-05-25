@@ -261,11 +261,14 @@ exports.deleteMessage = async (req, res) => {
     try {
         // Verify admin role
         const adminUser = await User.findById(req.user.id);
-        if (!adminUser || adminUser.role !== 'admin' && adminUser.role !== 'moderator') {
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied. Admin or moderator privileges required.'
-            });
+        if (
+          !adminUser ||
+          (adminUser.role !== "admin" && adminUser.role !== "user")
+        ) {
+          return res.status(403).json({
+            success: false,
+            message: "Access denied. Admin or moderator privileges required.",
+          });
         }
 
         const { messageId } = req.params;

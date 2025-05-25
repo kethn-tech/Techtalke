@@ -19,6 +19,13 @@ export const createChatSlice = (set, get) => ({
     });
   },
 
+  deleteMessage: (messageId) => {
+    const selectedChatMessages = get().selectedChatMessages;
+    set({
+      selectedChatMessages: selectedChatMessages.filter(msg => msg._id !== messageId)
+    });
+  },
+
   addMessage: (message) => {
     const selectedChatMessages = get().selectedChatMessages;
     const selectedChatType = get().selectedChatType;

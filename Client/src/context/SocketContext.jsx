@@ -11,7 +11,7 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const socket = useRef(null);
-  const { userInfo, addMessage } = useStore();
+  const { userInfo, addMessage, deleteMessage, setDmContacts } = useStore();
 
   useEffect(() => {
     if (userInfo) {
@@ -24,6 +24,10 @@ export const SocketProvider = ({ children }) => {
 
       socket.current.on("connect", () => {
         console.log("Connected to socket server");
+      });
+
+      socket.current.on("dmListUpdate", (contacts) => {
+        setDmContacts(contacts);
       });
 
       const handleReceiveMessage = (message) => {
@@ -61,8 +65,27 @@ export const SocketProvider = ({ children }) => {
 
       socket.current.on("receiveMessage", handleReceiveMessage);
 
+      socket.current.on("dmListUpdate", (dmList) => {
+        try {
+          console.log("Received DM list update:", dmList);
+          setDmContacts(dmList);
+        } catch (error) {
+          console.error("Error handling DM list update:", error);
+        }
+      });
+      socket.current.on("messageDeleted", ({ messageId }) => {
+        try {
+          deleteMessage(messageId);
+        } catch (error) {
+          console.error("Error handling message deletion:", error);
+        }
+      });
+
       return () => {
         if (socket.current) {
+          socket.current.off("receiveMessage,handleReceiveMessage");
+          socket.current.off("messageDeleted");
+          socket.current.off("dmListUpdate");
           socket.current.disconnect();
         }
       };

@@ -65,7 +65,7 @@ const DMList = () => {
                   : contact.email}
               </h4>
               <p className="text-sm  text-dark-muted truncate">
-                {contact.status || "Available"}
+                {contact.status || "Online"}
               </p>
             </div>
           </motion.div>
