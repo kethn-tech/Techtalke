@@ -2,14 +2,28 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: true,
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
+    minify: "terser",
+    target: "esnext",
+    terserOptions: {
+      compress: {
+        defaults: true,
+        drop_console: true,
+        hoist_vars: false,
+        hoist_funs: false,
+        pure_getters: true
+      },
+      format: {
+        comments: false
+      }
+    },
     rollupOptions: {
       external: [
-        // Exclude Node.js modules from browser bundle
         "fs",
         "path",
         "http",
@@ -21,22 +35,17 @@ export default defineConfig({
         "querystring",
       ],
       output: {
-        manualChunks: (id) => {
-          if (id.includes("node_modules")) {
-            if (id.includes("monaco-editor")) {
-              return "monaco";
-            }
-            if (id.includes("react")) {
-              return "react-vendor";
-            }
-            if (id.includes("@radix-ui")) {
-              return "radix-ui";
-            }
-            return "vendor";
-          }
-        },
-      },
-    },
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-label'],
+          'vendor-store': ['zustand'],
+          'vendor-socket': ['socket.io-client'],
+          'vendor-animation': ['framer-motion'],
+          'vendor-monaco': ['monaco-editor'],
+          'vendor-axios': ['axios']
+        }
+      }
+    }
   },
   resolve: {
     alias: {
