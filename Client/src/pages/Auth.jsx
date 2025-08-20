@@ -31,6 +31,7 @@ import RINGS from "vanta/dist/vanta.rings.min";
 import GLOBE from "vanta/dist/vanta.globe.min";
 import NET from "vanta/dist/vanta.net.min";
 
+
 const Auth = () => {
   // All your existing state (unchanged)
   const [isLogin, setIsLogin] = useState(true);

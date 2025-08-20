@@ -13,6 +13,8 @@ import { useStore } from "@/store/store";
 import apiClient from "./lib/apiClient";
 import Loader from "./pages/Loader";
 import AdminSettings from "./pages/Admin/Settings";
+import AboutTeam from "./pages/AboutTeam";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 
 // A small utility function to check if the user is an admin
