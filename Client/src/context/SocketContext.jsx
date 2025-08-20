@@ -35,7 +35,7 @@ export const SocketProvider = ({ children }) => {
   // Chat Socket (existing functionality)
   useEffect(() => {
     if (userInfo) {
-      socket.current = io("http://localhost:4000", {
+      socket.current = io(import.meta.env.VITE_APP_SERVER_URL, {
         withCredentials: true,
         query: {
           userId: userInfo._id,
@@ -269,7 +269,7 @@ export const SocketProvider = ({ children }) => {
     console.log("🔌 Initializing code collaboration socket...");
 
     // Create connection to /code namespace
-    const codeSocketInstance = io("http://localhost:4000/code", {
+    const codeSocketInstance = io(`${import.meta.env.VITE_APP_SERVER_URL}/code`, {
       withCredentials: true,
       auth: {
         token: localStorage.getItem("token"),
