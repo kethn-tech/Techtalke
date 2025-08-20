@@ -239,7 +239,7 @@ const Auth = () => {
 
                 <div>
                   <h1 className="text-7xl font-black bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent tracking-tight">
-                    TeckTalke
+                    TechTalke
                   </h1>
                   <motion.div
                     className="flex items-center gap-2 mt-1"
