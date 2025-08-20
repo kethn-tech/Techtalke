@@ -192,127 +192,191 @@ const Auth = () => {
         className="w-full max-w-7xl relative z-10"
       >
         <div className="grid lg:grid-cols-5 gap-12 items-center">
-          {/* Features Section - Row Layout with Icons Beside Titles */}
+          {/* Left Side - Enhanced Professional Branding */}
           <motion.div
-            className="space-y-6 lg:space-y-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
+            initial={{ opacity: 0, x: -60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="lg:col-span-3 space-y-10"
           >
-            <div className="text-center lg:text-left">
-              <h3 className="text-2xl lg:text-3xl font-bold text-white mb-3">
-                A Platform For Community Connection
-              </h3>
-              <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mx-auto lg:mx-0"></div>
-            </div>
-
-            <div className="space-y-4 lg:space-y-5">
-              {features.map((feature, index) => (
+            {/* Header Section */}
+            <div className="space-y-6">
+              <motion.div
+                className="inline-flex items-center gap-4"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
                 <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 1.3 + feature.delay }}
-                  whileHover={{ scale: 1.01, x: 12, y: -4 }}
-                  className="group relative p-5 lg:p-6 rounded-2xl bg-gradient-to-r from-white/5 via-transparent to-white/5 hover:from-white/10 hover:via-white/5 hover:to-transparent backdrop-blur-sm transition-all duration-500 cursor-pointer overflow-hidden"
+                  className="relative w-16 h-16"
+                  whileHover={{
+                    rotate: 360,
+                  }}
+                  transition={{ duration: 0.8 }}
                 >
-                  {/* Subtle glow effect */}
-                  <div
-                    className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500 rounded-2xl`}
-                  />
-
-                  {/* Floating orb effect */}
-                  <motion.div
-                    className={`absolute -left-4 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gradient-to-r ${feature.gradient} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-                    animate={{
-                      scale: [1, 1.5, 1],
-                      opacity: [0.5, 1, 0.5],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-
-                  {/* Content in row layout */}
-                  <div className="relative z-10 flex items-center gap-4 lg:gap-6">
-                    <motion.div
-                      className={`w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br ${
-                        feature.gradient
-                      } rounded-full flex items-center justify-center shadow-xl shadow-${
-                        feature.gradient.split("-")[1]
-                      }-500/20 group-hover:scale-110 group-hover:shadow-2xl transition-all duration-500 flex-shrink-0 relative`}
-                      whileHover={{ rotate: 15 }}
-                    >
-                      <feature.icon className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
-                      {/* Subtle ring around icon */}
-                      <motion.div
-                        className="absolute inset-0 rounded-full border-2 border-white/20 group-hover:border-white/40 transition-all duration-500"
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 8,
-                          repeat: Infinity,
-                          ease: "linear",
+                  <div className="w-16 h-16 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-2xl shadow-cyan-500/30 relative overflow-hidden">
+                    <MessageCircle className="w-8 h-8 text-white relative z-10" />
+                    {/* Animated tech grid overlay */}
+                    <div className="absolute inset-0 opacity-20">
+                      <div
+                        className="w-full h-full"
+                        style={{
+                          backgroundImage: `url("data:image/svg+xml,%3csvg width='20' height='20' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3cpattern id='grid' width='20' height='20' patternUnits='userSpaceOnUse'%3e%3cpath d='M 20 0 L 0 0 0 20' fill='none' stroke='white' stroke-width='0.5' opacity='0.1'/%3e%3c/pattern%3e%3c/defs%3e%3crect width='100%25' height='100%25' fill='url(%23grid)' /%3e%3c/svg%3e")`,
                         }}
                       />
-                    </motion.div>
-
-                    <div className="flex-1">
-                      <h4 className="font-bold text-white mb-2 text-lg lg:text-xl group-hover:text-cyan-100 transition-colors duration-300">
-                        {feature.title}
-                      </h4>
-                      <p className="text-gray-300 group-hover:text-gray-200 text-sm lg:text-base leading-relaxed transition-colors duration-300">
-                        {feature.description}
-                      </p>
                     </div>
                   </div>
-
-                  {/* Floating particles */}
+                  {/* Rotating ring */}
                   <motion.div
-                    className="absolute right-8 top-1/2 transform -translate-y-1/2"
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    whileHover={{
-                      opacity: [0.3, 1, 0.3],
-                      scale: [1, 1.2, 1],
-                    }}
+                    className="absolute inset-0 border-2 border-cyan-400/30 rounded-2xl"
+                    animate={{ rotate: 360 }}
                     transition={{
-                      duration: 0.5,
+                      duration: 8,
                       repeat: Infinity,
-                      repeatDelay: 2,
-                    }}
-                  >
-                    {[...Array(3)].map((_, i) => (
-                      <motion.div
-                        key={i}
-                        className={`absolute w-1 h-1 bg-gradient-to-r ${feature.gradient} rounded-full`}
-                        style={{
-                          right: i * 8,
-                          top: i * 4 - 8,
-                        }}
-                        animate={{
-                          opacity: [0.3, 1, 0.3],
-                          scale: [0.5, 1, 0.5],
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          delay: i * 0.2,
-                        }}
-                      />
-                    ))}
-                  </motion.div>
-
-                  {/* Subtle shimmer effect */}
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 -skew-x-12"
-                    animate={{ x: ["-100%", "100%"] }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      repeatDelay: 3,
+                      ease: "linear",
                     }}
                   />
                 </motion.div>
-              ))}
+
+                <div>
+                  <h1 className="text-7xl font-black bg-gradient-to-r from-white via-cyan-200 to-blue-200 bg-clip-text text-transparent tracking-tight">
+                    TeckTalke
+                  </h1>
+                  <motion.div
+                    className="flex items-center gap-2 mt-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                  >
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span className="text-xl text-cyan-300 font-mono">
+                      A Community Connection
+                    </span>
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
+            {/* Features Section - Row Layout with Icons Beside Titles */}
+            <motion.div
+              className="space-y-6 lg:space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.2 }}
+            >
+              <div className="text-center lg:text-left">
+                <h3 className="text-2xl lg:text-3xl font-bold text-white mb-3">
+                  A Platform For Community Connection
+                </h3>
+                <div className="w-20 h-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full mx-auto lg:mx-0"></div>
+              </div>
+
+              <div className="space-y-4 lg:space-y-5">
+                {features.map((feature, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.6, delay: 1.3 + feature.delay }}
+                    whileHover={{ scale: 1.01, x: 12, y: -4 }}
+                    className="group relative p-5 lg:p-6 rounded-2xl bg-gradient-to-r from-white/5 via-transparent to-white/5 hover:from-white/10 hover:via-white/5 hover:to-transparent backdrop-blur-sm transition-all duration-500 cursor-pointer overflow-hidden"
+                  >
+                    {/* Subtle glow effect */}
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-10 blur-xl transition-all duration-500 rounded-2xl`}
+                    />
+
+                    {/* Floating orb effect */}
+                    <motion.div
+                      className={`absolute -left-4 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-gradient-to-r ${feature.gradient} rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+                      animate={{
+                        scale: [1, 1.5, 1],
+                        opacity: [0.5, 1, 0.5],
+                      }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    />
+
+                    {/* Content in row layout */}
+                    <div className="relative z-10 flex items-center gap-4 lg:gap-6">
+                      <motion.div
+                        className={`w-12 h-12 lg:w-14 lg:h-14 bg-gradient-to-br ${
+                          feature.gradient
+                        } rounded-full flex items-center justify-center shadow-xl shadow-${
+                          feature.gradient.split("-")[1]
+                        }-500/20 group-hover:scale-110 group-hover:shadow-2xl transition-all duration-500 flex-shrink-0 relative`}
+                        whileHover={{ rotate: 15 }}
+                      >
+                        <feature.icon className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
+                        {/* Subtle ring around icon */}
+                        <motion.div
+                          className="absolute inset-0 rounded-full border-2 border-white/20 group-hover:border-white/40 transition-all duration-500"
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 8,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        />
+                      </motion.div>
+
+                      <div className="flex-1">
+                        <h4 className="font-bold text-white mb-2 text-lg lg:text-xl group-hover:text-cyan-100 transition-colors duration-300">
+                          {feature.title}
+                        </h4>
+                        <p className="text-gray-300 group-hover:text-gray-200 text-sm lg:text-base leading-relaxed transition-colors duration-300">
+                          {feature.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Floating particles */}
+                    <motion.div
+                      className="absolute right-8 top-1/2 transform -translate-y-1/2"
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      whileHover={{
+                        opacity: [0.3, 1, 0.3],
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 0.5,
+                        repeat: Infinity,
+                        repeatDelay: 2,
+                      }}
+                    >
+                      {[...Array(3)].map((_, i) => (
+                        <motion.div
+                          key={i}
+                          className={`absolute w-1 h-1 bg-gradient-to-r ${feature.gradient} rounded-full`}
+                          style={{
+                            right: i * 8,
+                            top: i * 4 - 8,
+                          }}
+                          animate={{
+                            opacity: [0.3, 1, 0.3],
+                            scale: [0.5, 1, 0.5],
+                          }}
+                          transition={{
+                            duration: 1.5,
+                            repeat: Infinity,
+                            delay: i * 0.2,
+                          }}
+                        />
+                      ))}
+                    </motion.div>
+
+                    {/* Subtle shimmer effect */}
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 -skew-x-12"
+                      animate={{ x: ["-100%", "100%"] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        repeatDelay: 3,
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </motion.div>
 
           {/* Right Side - Ultra-Modern Auth Form */}
