@@ -124,112 +124,116 @@ const App = () => {
   }
 
   return (
-      <Routes>
-        {/* Authentication Routes */}
-        <Route
-          path="/auth"
-          element={
-            <AuthRoutes>
-              <Auth />
-            </AuthRoutes>
-          }
-        />
+    <Routes>
+      {/* Authentication Routes */}
+      <Route
+        path="/auth"
+        element={
+          <AuthRoutes>
+            <Auth />
+          </AuthRoutes>
+        }
+      />
 
-        {/* User Protected Routes */}
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoutes>
-              <Chat />
-            </ProtectedRoutes>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoutes>
-              <Profile />
-            </ProtectedRoutes>
-          }
-        />
-        <Route
-          path="/code-editor"
-          element={
-            <ProtectedRoutes>
-              <CodeEditor />
-            </ProtectedRoutes>
-          }
-        />
-        <Route
-          path="/code-editor/:sessionId"
-          element={
-            <ProtectedRoutes>
-              <CodeEditor />
-            </ProtectedRoutes>
-          }
-        />
-        <Route
-          path="/coffee-break"
-          element={
-            <ProtectedRoutes>
-              <CoffeeBreak />
-            </ProtectedRoutes>
-          }
-        />
+      {/* User Protected Routes */}
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoutes>
+            <Chat />
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoutes>
+            <Profile />
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/code-editor"
+        element={
+          <ProtectedRoutes>
+            <CodeEditor />
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/code-editor/:sessionId"
+        element={
+          <ProtectedRoutes>
+            <CodeEditor />
+          </ProtectedRoutes>
+        }
+      />
+      <Route
+        path="/coffee-break"
+        element={
+          <ProtectedRoutes>
+            <CoffeeBreak />
+          </ProtectedRoutes>
+        }
+      />
+      {/* Public Route for About Team */}
+      <Route path="/about-team" element={<AboutTeam />} />
+      {/* Public Route for Privacy Policy */}
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
-        {/* Admin Protected Routes */}
-        <Route
-          path="/admin"
-          element={
-            <AdminProtectedRoutes>
-              <AdminDashboard />
-            </AdminProtectedRoutes>
-          }
-        />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminProtectedRoutes>
-              <AdminDashboard />
-            </AdminProtectedRoutes>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminProtectedRoutes>
-              <AdminUsers />
-            </AdminProtectedRoutes>
-          }
-        />
-        <Route
-          path="/admin/messages"
-          element={
-            <AdminProtectedRoutes>
-              <AdminMessages />
-            </AdminProtectedRoutes>
-          }
-        />
-        <Route
-          path="/admin/calendar"
-          element={
-            <AdminProtectedRoutes>
-              <AdminCalendar />
-            </AdminProtectedRoutes>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <AdminProtectedRoutes>
-              <AdminSettings />
-            </AdminProtectedRoutes>
-          }
-        />
+      {/* Admin Protected Routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminProtectedRoutes>
+            <AdminDashboard />
+          </AdminProtectedRoutes>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <AdminProtectedRoutes>
+            <AdminDashboard />
+          </AdminProtectedRoutes>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <AdminProtectedRoutes>
+            <AdminUsers />
+          </AdminProtectedRoutes>
+        }
+      />
+      <Route
+        path="/admin/messages"
+        element={
+          <AdminProtectedRoutes>
+            <AdminMessages />
+          </AdminProtectedRoutes>
+        }
+      />
+      <Route
+        path="/admin/calendar"
+        element={
+          <AdminProtectedRoutes>
+            <AdminCalendar />
+          </AdminProtectedRoutes>
+        }
+      />
+      <Route
+        path="/admin/settings"
+        element={
+          <AdminProtectedRoutes>
+            <AdminSettings />
+          </AdminProtectedRoutes>
+        }
+      />
 
-        {/* Default redirect for all other paths */}
-        <Route path="*" element={<Navigate to="/auth" />} />
-      </Routes>
+      {/* Default redirect for all other paths */}
+      <Route path="*" element={<Navigate to="/auth" />} />
+    </Routes>
   );
 };
 
