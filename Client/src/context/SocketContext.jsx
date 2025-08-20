@@ -32,10 +32,12 @@ export const SocketProvider = ({ children }) => {
     removeFromGroup,
   } = useStore();
 
+  const baseURL = import.meta.env.VITE_APP_SERVER_URL;
+
   // Chat Socket (existing functionality)
   useEffect(() => {
     if (userInfo) {
-      socket.current = io(import.meta.env.VITE_APP_SERVER_URL, {
+      socket.current = io(baseURL, {
         withCredentials: true,
         query: {
           userId: userInfo._id,
@@ -94,14 +96,20 @@ export const SocketProvider = ({ children }) => {
 
           if (message.sender._id !== userInfo._id) {
             let isViewingThisChat = false;
-            
+
             if (selectedChatType === "dm") {
-              isViewingThisChat = selectedChatData && selectedChatData._id === message.sender._id;
+              isViewingThisChat =
+                selectedChatData && selectedChatData._id === message.sender._id;
             } else if (selectedChatType === "group" && message.group) {
-              isViewingThisChat = selectedChatData && selectedChatData._id === message.group._id;
+              isViewingThisChat =
+                selectedChatData && selectedChatData._id === message.group._id;
             }
 
-            if (isViewingThisChat && socket.current && socket.current.connected) {
+            if (
+              isViewingThisChat &&
+              socket.current &&
+              socket.current.connected
+            ) {
               setTimeout(() => {
                 if (selectedChatType === "dm") {
                   socket.current.emit("markMessagesAsRead", {
@@ -112,13 +120,15 @@ export const SocketProvider = ({ children }) => {
                   socket.current.emit("groupMessageRead", {
                     groupId: message.group._id,
                     messageId: message._id,
-                    userId: userInfo._id
+                    userId: userInfo._id,
                   });
                 }
               }, 300);
             } else {
               const senderName = message.sender.firstName
-                ? `${message.sender.firstName} ${message.sender.lastName || ""}`.trim()
+                ? `${message.sender.firstName} ${
+                    message.sender.lastName || ""
+                  }`.trim()
                 : "Someone";
 
               let notificationMsg = "New message received";
@@ -142,7 +152,7 @@ export const SocketProvider = ({ children }) => {
 
       socket.current.on("receiveMessage", handleReceiveMessage);
       socket.current.on("groupMessage", handleReceiveMessage);
-      
+
       socket.current.on("dmListUpdate", (dmList) => {
         try {
           setDmContacts(dmList);
@@ -155,7 +165,8 @@ export const SocketProvider = ({ children }) => {
         try {
           setGroupContacts(groupList);
           // If currently viewing a group that no longer exists, close the chat
-          const { selectedChatType, selectedChatData, closeChat } = useStore.getState();
+          const { selectedChatType, selectedChatData, closeChat } =
+            useStore.getState();
           if (
             selectedChatType === "group" &&
             selectedChatData &&
@@ -206,7 +217,9 @@ export const SocketProvider = ({ children }) => {
       const handleCalendarEventCreated = (event) => {
         try {
           const title = event?.title || "New Event";
-          const dateStr = event?.start ? format(parseISO(event.start), "PP") : "";
+          const dateStr = event?.start
+            ? format(parseISO(event.start), "PP")
+            : "";
           toast.success(`📅 ${title} – ${dateStr}`, { duration: 3000 });
         } catch (error) {
           console.error("Error handling calendar event creation:", error);
@@ -269,7 +282,7 @@ export const SocketProvider = ({ children }) => {
     console.log("🔌 Initializing code collaboration socket...");
 
     // Create connection to /code namespace
-    const codeSocketInstance = io(`${import.meta.env.VITE_APP_SERVER_URL}/code`, {
+    const codeSocketInstance = io(`${baseURL}/code`, {
       withCredentials: true,
       auth: {
         token: localStorage.getItem("token"),

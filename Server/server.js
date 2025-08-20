@@ -31,18 +31,22 @@ const maintenanceMiddleware = require("./middlewares/MaintenanceMiddleware");
 
 // ✨ FIXED: Apply maintenance mode middleware SELECTIVELY
 // The key fix is to apply it AFTER basic middleware setup but BEFORE protected routes
-app.use(express.json());
+app.set("trust proxy", 1);
+
+// 🔧 ADD: Dynamic allowed origins from environment
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  process.env.CLIENT_URL, // https://techtalke.vercel.app
+].filter(Boolean);
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(cookieParser());
 
 // Configure CORS
 const corsOptions = {
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "https://techtalke.vercel.app",
-    "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
-  ],
+  origin: ALLOWED_ORIGINS,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: [
@@ -68,13 +72,7 @@ app.use(
 // Better CORS headers middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "https://techtalke.vercel.app",
-    "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
-  ];
+  const allowedOrigins = ALLOWED_ORIGINS;
 
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin);
@@ -181,13 +179,7 @@ const server = http.createServer(app);
 // ✨ ENHANCED: Socket.io configuration with better error handling
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://techtalke.vercel.app",
-      "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
-    ],
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },

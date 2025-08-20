@@ -3,7 +3,6 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const axios = require("axios");
 
-
 const logIn = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -38,12 +37,13 @@ const logIn = async (req, res) => {
       { expiresIn: "3d" }
     );
 
-    // Set cookie with appropriate settings for development
+    // 🔧 FIXED: Cross-site cookie settings for Vercel<->Render
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days in milliseconds
+      secure: true, // Always true for HTTPS (required for production)
+      sameSite: "none", // Required for cross-site cookies
+      path: "/",
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
     });
 
     console.log(`✅ User logged in: ${data.email} (Role: ${data.role})`);
@@ -58,7 +58,7 @@ const logIn = async (req, res) => {
         firstName: data.firstName,
         lastName: data.lastName,
         image: data.image,
-        color: data.color
+        color: data.color,
       },
     });
   } catch (err) {
@@ -72,7 +72,6 @@ const logIn = async (req, res) => {
 
 const getUserInfo = async (req, res, next) => {
   try {
-    // Add console log to debug the user ID
     console.log("User ID from middleware: ", req.id);
 
     const user = await User.findById(req.id);
@@ -94,7 +93,7 @@ const getUserInfo = async (req, res, next) => {
         firstName: user.firstName,
         lastName: user.lastName,
         image: user.image,
-        color: user.color
+        color: user.color,
       },
     });
   } catch (err) {
@@ -108,10 +107,12 @@ const getUserInfo = async (req, res, next) => {
 
 const logOut = async (req, res) => {
   try {
+    // 🔧 FIXED: Cross-site cookie clearing
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+      secure: true, // Always true for HTTPS
+      sameSite: "none", // Required for cross-site cookies
+      path: "/",
     });
 
     return res.status(200).json({
@@ -128,21 +129,25 @@ const logOut = async (req, res) => {
 };
 
 const githubAuth = (req, res) => {
+  // 🔧 FIXED: Use server URL from environment
   const redirectUri = encodeURIComponent(
-    "https://techtalke.onrender.com/api/auth/github/callback"
+    `${req.protocol}://${req.get("host")}/api/auth/github/callback`
   );
   const clientId = process.env.GITHUB_CLIENT_ID;
   const githubUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
   res.redirect(githubUrl);
 };
 
-// Step 2: Handle GitHub OAuth callback
 const githubCallback = async (req, res) => {
   const code = req.query.code;
   if (!code) return res.status(400).json({ error: "No code provided" });
 
   try {
-    // Exchange code for access token
+    // 🔧 FIXED: Dynamic redirect URI
+    const redirectUri = `${req.protocol}://${req.get(
+      "host"
+    )}/api/auth/github/callback`;
+
     const tokenRes = await axios.post(
       "https://github.com/login/oauth/access_token",
       {
@@ -154,7 +159,6 @@ const githubCallback = async (req, res) => {
     );
     const accessToken = tokenRes.data.access_token;
 
-    // Get user info from GitHub
     const userRes = await axios.get("https://api.github.com/user", {
       headers: { Authorization: `token ${accessToken}` },
     });
@@ -163,38 +167,36 @@ const githubCallback = async (req, res) => {
       headers: { Authorization: `token ${accessToken}` },
     });
 
-    // Prefer primary email
     const emailObj = emailRes.data.find((e) => e.primary) || emailRes.data[0];
     const email = emailObj.email;
 
-    // Find or create user in your DB
     let user = await User.findOne({ email });
     if (!user) {
       user = await User.create({
         email,
-        password: "", // Empty password for OAuth users
+        password: "",
         githubId: userRes.data.id,
-        role: "user"
+        role: "user",
       });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { email: user.email, id: user._id.toString(), role: user.role },
       process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 
-    // Set cookie and redirect to frontend (adjust URL as needed)
+    // 🔧 FIXED: Cross-site cookie settings
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 3 * 24 * 60 * 60 * 1000,
     });
 
-    // Redirect to your frontend app
-    res.redirect("http://localhost:5173/auth/");
+    // 🔧 FIXED: Redirect to CLIENT_URL from environment
+    res.redirect(`${process.env.CLIENT_URL}/auth`);
   } catch (err) {
     console.error("GitHub OAuth error:", err);
     res.status(500).json({ error: "GitHub OAuth failed" });
@@ -202,8 +204,9 @@ const githubCallback = async (req, res) => {
 };
 
 const linkedinAuth = (req, res) => {
+  // 🔧 FIXED: Use server URL from environment
   const redirectUri = encodeURIComponent(
-    "https://techtalke.onrender.com/api/auth/linkedin/callback"
+    `${req.protocol}://${req.get("host")}/api/auth/linkedin/callback`
   );
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const state = "randomstatestring";
@@ -221,9 +224,12 @@ const linkedinCallback = async (req, res) => {
     return res.status(400).send("No code provided in callback.");
   }
 
-  const redirectUri = "https://techtalke.onrender.com/api/auth/linkedin/callback";
+  // 🔧 FIXED: Dynamic redirect URI
+  const redirectUri = `${req.protocol}://${req.get(
+    "host"
+  )}/api/auth/linkedin/callback`;
+
   try {
-    // Exchange code for access token
     const tokenRes = await axios.post(
       "https://www.linkedin.com/oauth/v2/accessToken",
       new URLSearchParams({
@@ -237,39 +243,38 @@ const linkedinCallback = async (req, res) => {
     );
     const accessToken = tokenRes.data.access_token;
 
-    // Fetch user profile
     const userInfo = await axios.get("https://api.linkedin.com/v2/userinfo", {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     const email = userInfo.data.email;
 
-    // Find or create user
     let user = await User.findOne({ email });
     if (!user) {
       user = await User.create({
         email,
-        password: "", // Empty password for OAuth users
+        password: "",
         linkedinId: userInfo.data.sub,
-        role: "user"
+        role: "user",
       });
     }
 
-    // Generate JWT
     const token = jwt.sign(
       { email: user.email, id: user._id.toString(), role: user.role },
       process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 
-    // Set cookie and redirect to frontend
+    // 🔧 FIXED: Cross-site cookie settings
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 3 * 24 * 60 * 60 * 1000,
     });
 
-    res.redirect("http://localhost:5173/");
+    // 🔧 FIXED: Redirect to CLIENT_URL from environment
+    res.redirect(`${process.env.CLIENT_URL}`);
   } catch (err) {
     console.error(
       "LinkedIn OAuth error:",
@@ -291,6 +296,3 @@ module.exports = {
   linkedinAuth,
   linkedinCallback,
 };
-
-
-
