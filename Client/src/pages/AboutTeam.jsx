@@ -29,7 +29,7 @@ const teamMembers = [
     gradient: "from-green-500 to-emerald-500",
     details: {
       skills: ["Node.js", "Express.js", "MongoDB", "Socket.io"],
-      location: "Hubballi, Karnataka",
+      location: "Bijapur, Karnataka",
     },
   },
   {
@@ -48,7 +48,7 @@ const teamMembers = [
         "QA Automation",
         "Documentation",
       ],
-      location: "Hubballi, Karnataka",
+      location: "Balagavi, Karnataka",
     },
   },
   {
