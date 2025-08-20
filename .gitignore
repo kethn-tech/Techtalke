@@ -1,0 +1,61 @@
+# ---- Node.js Dependencies ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- Environment Variables ----
+*.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ---- Build Outputs ----
+dist/
+build/
+.cache/
+.next/
+out/
+
+# ---- Logs ----
+logs/
+*.log
+*.log.*
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ---- Editor / OS Files ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ---- Client-specific ----
+Client/.env
+Client/.vite/
+Client/.turbo/
+Client/.parcel-cache/
+Client/public/.DS_Store
+
+# If using react-scripts or Vite output
+Client/dist/
+
+# ---- Server-specific ----
+Server/.env
+Server/uploads/
+Server/temp/
+
+# Ignore lock files depending on preference
+# package-lock.json or yarn.lock if not needed in VCS
+# Uncomment if you don't want to lock dependencies
+# package-lock.json
+# yarn.lock
+
+# ---- Misc ----
+*.tar.gz
+*.zip
+
