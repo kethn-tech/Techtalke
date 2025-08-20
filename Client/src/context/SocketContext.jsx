@@ -32,7 +32,8 @@ export const SocketProvider = ({ children }) => {
     removeFromGroup,
   } = useStore();
 
-  const baseURL = import.meta.env.VITE_APP_SERVER_URL;
+  const baseURL =
+    import.meta.env.VITE_APP_SERVER_URL || "https://techtalke.onrender.com";
 
   // Chat Socket (existing functionality)
   useEffect(() => {
