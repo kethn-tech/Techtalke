@@ -56,7 +56,8 @@ const teamMembers = [
     role: "DevOps Engineer",
     description:
       "Streamlines deployment pipelines and ensures robust automation for continuous integration and delivery.",
-    image: "/assets/team/sangamesh.jpg",
+    image:
+      "https://res.cloudinary.com/datfhmdzv/image/upload/WhatsApp_Image_2025-08-20_at_18.50.28_88b94ca4_epbbj1.jpg",
     icon: Zap,
     gradient: "from-purple-500 to-indigo-500",
     details: {
