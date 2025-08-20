@@ -7,10 +7,10 @@ import commonjs from '@rollup/plugin-commonjs';
 export default defineConfig({
   plugins: [
     react({
-      jsxRuntime: 'classic',
+      jsxRuntime: 'automatic',
       babel: {
         presets: [
-          ['@babel/preset-react', { runtime: 'classic' }]
+          ['@babel/preset-react', { runtime: 'automatic' }]
         ]
       }
     })
