@@ -37,117 +37,137 @@ app.use(cookieParser());
 // Configure CORS
 const corsOptions = {
   origin: [
-    'http://localhost:3000', 
-    'http://localhost:5173', 
-    'http://localhost:5174'
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://techtalke.vercel.app",
+    "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Cookie']
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Cookie",
+  ],
 };
 
 app.use(cors(corsOptions));
 
 // Handle preflight requests
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Static file serving
-app.use("/uploads/profile-images", express.static(path.join(__dirname, "uploads/profile-images")));
+app.use(
+  "/uploads/profile-images",
+  express.static(path.join(__dirname, "uploads/profile-images"))
+);
 
 // Better CORS headers middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'];
-  
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://techtalke.vercel.app",
+    "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
+  ];
+
   if (allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
+    res.header("Access-Control-Allow-Origin", origin);
   }
-  
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Cookie, Set-Cookie');
-  res.header('Access-Control-Allow-Credentials', true);
-  res.header('Access-Control-Expose-Headers', 'Set-Cookie');
-  
-  if (req.method === 'OPTIONS') {
+
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization, X-Requested-With, Accept, Cookie, Set-Cookie"
+  );
+  res.header("Access-Control-Allow-Credentials", true);
+  res.header("Access-Control-Expose-Headers", "Set-Cookie");
+
+  if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
-  
+
   next();
 });
 
 // Maintenance status endpoint (must be before maintenance middleware)
-app.get('/api/maintenance/status', async (req, res) => {
+app.get("/api/maintenance/status", async (req, res) => {
   try {
     const settings = await Setting.findOne();
     res.json({ maintenanceMode: settings?.maintenanceMode || false });
   } catch (err) {
-    console.error('Error fetching maintenance status:', err);
+    console.error("Error fetching maintenance status:", err);
     res.json({ maintenanceMode: false });
   }
 });
 
 // ✨ CRITICAL FIX: Apply maintenance middleware BEFORE API routes
-app.use('/api', maintenanceMiddleware);
+app.use("/api", maintenanceMiddleware);
 
 // ✨ NOW apply your API routes (maintenance middleware will check them)
-app.use('/api/auth', AuthRoute);
-app.use('/api', profileRoute);
-app.use('/api/contact', ContactRoutes);
-app.use('/api/message', messageRoutes);
-app.use('/api/admin', adminRoutes);
+app.use("/api/auth", AuthRoute);
+app.use("/api", profileRoute);
+app.use("/api/contact", ContactRoutes);
+app.use("/api/message", messageRoutes);
+app.use("/api/admin", adminRoutes);
 app.use("/api/code", codeRoutes);
-app.use('/api/groups', groupRoutes);
+app.use("/api/groups", groupRoutes);
 
 // Health check endpoint (bypasses maintenance in the middleware itself)
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({
-    status: 'OK',
+    status: "OK",
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || "development",
     services: {
-      database: 'connected',
-      redis: 'not configured',
-      code_collaboration: 'enabled'
-    }
+      database: "connected",
+      redis: "not configured",
+      code_collaboration: "enabled",
+    },
   });
 });
 
 // Rest of your server setup remains the same...
 // ✨ ENHANCED: Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('🚨 Server Error:', {
+  console.error("🚨 Server Error:", {
     error: err.message,
     stack: err.stack,
     url: req.url,
     method: req.method,
     timestamp: new Date().toISOString(),
-    ip: req.ip
+    ip: req.ip,
   });
 
   // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
+  const isDevelopment = process.env.NODE_ENV === "development";
+
   res.status(err.status || 500).json({
     success: false,
-    message: isDevelopment ? err.message : 'Internal server error',
-    ...(isDevelopment && { stack: err.stack })
+    message: isDevelopment ? err.message : "Internal server error",
+    ...(isDevelopment && { stack: err.stack }),
   });
 });
 
 // ✨ ENHANCED: 404 handler for API routes
-app.use('/api/*', (req, res) => {
+app.use("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
     message: `API endpoint not found: ${req.method} ${req.originalUrl}`,
     availableEndpoints: [
-      'GET /api/health',
-      'POST /api/auth/login',
-      'GET /api/auth/userInfo',
-      'POST /api/code/create-session',
-      'GET /api/code/join/:sessionId',
-      'POST /api/code/execute'
-    ]
+      "GET /api/health",
+      "POST /api/auth/login",
+      "GET /api/auth/userInfo",
+      "POST /api/code/create-session",
+      "GET /api/code/join/:sessionId",
+      "POST /api/code/execute",
+    ],
   });
 });
 
@@ -161,9 +181,15 @@ const server = http.createServer(app);
 // ✨ ENHANCED: Socket.io configuration with better error handling
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://techtalke.vercel.app",
+      "https://techtalke-msbtiu3qu-kethans-projects-f45fa870.vercel.app",
+    ],
     methods: ["GET", "POST"],
-    credentials: true
+    credentials: true,
   },
   // ✨ Enhanced socket.io options
   pingTimeout: 60000,
@@ -172,7 +198,7 @@ const io = new Server(server, {
   allowUpgrades: true,
   cookie: false,
   serveClient: false,
-  allowEIO3: true
+  allowEIO3: true,
 });
 
 // Make io globally accessible for controllers
