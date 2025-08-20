@@ -30,7 +30,7 @@ const CoffeeBreak = () => {
 
   useEffect(() => {
     if (userInfo && !socket.current) {
-      socket.current = io('http://localhost:4000/coffee-break', {
+      socket.current = io('https://techtalke.onrender.com/coffee-break', {
         query: {
           userId: userInfo._id,
           firstName: userInfo.firstName,

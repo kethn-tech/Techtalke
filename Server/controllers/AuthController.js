@@ -129,7 +129,7 @@ const logOut = async (req, res) => {
 
 const githubAuth = (req, res) => {
   const redirectUri = encodeURIComponent(
-    "http://localhost:4000/api/auth/github/callback"
+    "https://techtalke.onrender.com/api/auth/github/callback"
   );
   const clientId = process.env.GITHUB_CLIENT_ID;
   const githubUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=user:email`;
@@ -203,7 +203,7 @@ const githubCallback = async (req, res) => {
 
 const linkedinAuth = (req, res) => {
   const redirectUri = encodeURIComponent(
-    "http://localhost:4000/api/auth/linkedin/callback"
+    "https://techtalke.onrender.com/api/auth/linkedin/callback"
   );
   const clientId = process.env.LINKEDIN_CLIENT_ID;
   const state = "randomstatestring";
@@ -221,7 +221,7 @@ const linkedinCallback = async (req, res) => {
     return res.status(400).send("No code provided in callback.");
   }
 
-  const redirectUri = "http://localhost:4000/api/auth/linkedin/callback";
+  const redirectUri = "https://techtalke.onrender.com/api/auth/linkedin/callback";
   try {
     // Exchange code for access token
     const tokenRes = await axios.post(

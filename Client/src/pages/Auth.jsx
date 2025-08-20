@@ -104,11 +104,11 @@ const Auth = () => {
   };
 
   const handleGithubLogin = () => {
-    window.location.href = "http://localhost:4000/api/auth/github";
+    window.location.href = "https://techtalke.onrender.com/api/auth/github";
   };
 
   const handleLinkedinLogin = () => {
-    window.location.href = "http://localhost:4000/api/auth/linkedin";
+    window.location.href = "https://techtalke.onrender.com/api/auth/linkedin";
   };
 
   const features = [

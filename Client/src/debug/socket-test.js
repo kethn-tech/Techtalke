@@ -5,7 +5,7 @@ const testCodeCollaboration = () => {
   console.log('🧪 Starting Code Collaboration Socket Test...');
   
   // Test socket connection
-  const socket = io('http://localhost:4000', {
+  const socket = io('https://techtalke.onrender.com', {
     transports: ['polling', 'websocket'],
     upgrade: true,
     timeout: 10000
