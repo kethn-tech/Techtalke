@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
@@ -124,7 +124,6 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
       <Routes>
         {/* Authentication Routes */}
         <Route
@@ -231,7 +230,6 @@ const App = () => {
         {/* Default redirect for all other paths */}
         <Route path="*" element={<Navigate to="/auth" />} />
       </Routes>
-    </BrowserRouter>
   );
 };
 
