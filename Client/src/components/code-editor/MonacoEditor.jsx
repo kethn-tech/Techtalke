@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
 
 const MonacoEditor = ({ 
   value, 
@@ -86,17 +85,17 @@ const MonacoEditor = ({
       const decorations = participants
         .filter(p => p.cursor && p.userId !== 'current-user') // Filter out current user
         .map(participant => ({
-          range: new monaco.Range(
-            participant.cursor.line,
-            participant.cursor.column,
-            participant.cursor.line,
-            participant.cursor.column + 1
-          ),
+          range: {
+            startLineNumber: participant.cursor.line,
+            startColumn: participant.cursor.column,
+            endLineNumber: participant.cursor.line,
+            endColumn: participant.cursor.column + 1
+          },
           options: {
             className: 'participant-cursor',
             beforeContentClassName: 'participant-cursor-before',
             afterContentClassName: 'participant-cursor-after',
-            stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+            stickiness: 1, // NeverGrowsWhenTypingAtEdges
             hoverMessage: { value: participant.username }
           }
         }));

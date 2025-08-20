@@ -1,27 +1,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import commonjs from '@rollup/plugin-commonjs';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      jsxRuntime: 'classic',
+      babel: {
+        presets: [
+          ['@babel/preset-react', { runtime: 'classic' }]
+        ]
+      }
+    })
+  ],
   build: {
     sourcemap: true,
     chunkSizeWarningLimit: 1500,
-    minify: "terser",
-    target: "esnext",
-    terserOptions: {
-      compress: {
-        defaults: true,
-        drop_console: true,
-        hoist_vars: false,
-        hoist_funs: false,
-        pure_getters: true
-      },
-      format: {
-        comments: false
-      }
-    },
+    minify: 'esbuild',
+    target: 'esnext',
     rollupOptions: {
       external: [
         "fs",
@@ -35,14 +33,22 @@ export default defineConfig({
         "querystring",
       ],
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-label'],
-          'vendor-store': ['zustand'],
-          'vendor-socket': ['socket.io-client'],
-          'vendor-animation': ['framer-motion'],
-          'vendor-monaco': ['monaco-editor'],
-          'vendor-axios': ['axios']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('monaco-editor')) {
+              return 'monaco';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix';
+            }
+            if (id.includes('react') || id.includes('zustand') || id.includes('socket.io-client')) {
+              return 'vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'animation';
+            }
+            return 'vendor';
+          }
         }
       }
     }
@@ -51,12 +57,13 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
-  },
-  define: {
-    // Ensure these are defined for browser
-    global: "globalThis",
+    dedupe: ['react', 'react-dom']
   },
   optimizeDeps: {
-    exclude: ["@emotion/is-prop-valid"],
+    include: ['react', 'react-dom', 'monaco-editor']
   },
+  esbuild: {
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
+  }
 });
