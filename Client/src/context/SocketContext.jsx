@@ -267,146 +267,119 @@ export const SocketProvider = ({ children }) => {
   }, [userInfo]);
 
   // Code Collaboration Socket - SEPARATE CONNECTION
-// Client/src/context/SocketContext.jsx - Add these optimized functions
-
-// Replace your existing initializeCodeSocket function with this:
-const initializeCodeSocket = (sessionId) => {
-  // Reuse existing connection if possible
-  if (codeSocket.current?.connected && codeSocket.current.sessionId === sessionId) {
-    console.log("Reusing existing code socket connection");
-    return codeSocket.current;
-  }
-
-  if (codeSocket.current) {
-    console.log("Cleaning up existing code socket...");
-    codeSocket.current.disconnect();
-    codeSocket.current = null;
-  }
-
-  if (!userInfo || !sessionId) {
-    console.log("Cannot initialize code socket - missing userInfo or sessionId");
-    return null;
-  }
-
-  console.log("Initializing code collaboration socket...");
-
-  // Create connection to /code namespace with optimized settings
-  const codeSocketInstance = io(`${baseURL}/code`, {
-    withCredentials: true,
-    auth: {
-      token: localStorage.getItem("token"),
-      userId: userInfo._id || userInfo.id,
-    },
-    query: {
-      userId: userInfo._id || userInfo.id,
-      sessionId: sessionId,
-    },
-    transports: ["websocket", "polling"], // Prefer websocket for speed
-    upgrade: true,
-    timeout: 10000, // Reduced timeout
-    forceNew: true,
-    reconnection: true,
-    reconnectionAttempts: 3, // Reduced attempts for faster failure detection
-    reconnectionDelay: 1000,
-    // Performance optimizations
-    compression: true,
-    rememberUpgrade: true,
-    autoConnect: true
-  });
-
-  // Store session ID for reuse detection
-  codeSocketInstance.sessionId = sessionId;
-
-  // Connection events
-  codeSocketInstance.on("connect", () => {
-    console.log("Connected to code collaboration server");
-    setCodeConnectionState("connected");
-
-    // Auto-join session on connect
-    console.log(`Auto-joining session: ${sessionId}`);
-    codeSocketInstance.emit("join-code-session", {
-      sessionId,
-      user: userInfo,
-    });
-  });
-
-  codeSocketInstance.on("disconnect", (reason) => {
-    console.log("Code socket disconnected:", reason);
-    setCodeConnectionState("disconnected");
-    
-    // Auto-reconnect for certain reasons
-    if (reason === "io server disconnect" || reason === "transport close") {
-      setTimeout(() => {
-        if (codeSocketInstance && !codeSocketInstance.connected) {
-          console.log("Attempting auto-reconnect...");
-          codeSocketInstance.connect();
-        }
-      }, 2000);
+  const initializeCodeSocket = (sessionId) => {
+    if (codeSocket.current) {
+      console.log("🧹 Cleaning up existing code socket...");
+      codeSocket.current.disconnect();
+      codeSocket.current = null;
     }
-  });
 
-  codeSocketInstance.on("connect_error", (error) => {
-    console.error("Code socket connection error:", error);
-    setCodeConnectionState("error");
-  });
-
-  codeSocketInstance.on("reconnect", () => {
-    console.log("Code socket reconnected");
-    setCodeConnectionState("connected");
-
-    // Rejoin session on reconnect
-    codeSocketInstance.emit("join-code-session", {
-      sessionId,
-      user: userInfo,
-    });
-  });
-
-  // Error recovery
-  codeSocketInstance.on("error", (error) => {
-    console.error("Code socket error:", error);
-    
-    // Try to recover from certain errors
-    if (error.message?.includes("timeout") || error.message?.includes("transport")) {
-      setTimeout(() => {
-        if (!codeSocketInstance.connected) {
-          codeSocketInstance.connect();
-        }
-      }, 1500);
+    if (!userInfo || !sessionId) {
+      console.log(
+        "⚠️ Cannot initialize code socket - missing userInfo or sessionId"
+      );
+      return null;
     }
-  });
 
-  codeSocket.current = codeSocketInstance;
-  return codeSocketInstance;
-};
+    console.log("🔌 Initializing code collaboration socket...");
 
-// Also update your emitCode function for better reliability:
-const emitCode = (event, data) => {
-  if (codeSocket.current && codeSocket.current.connected) {
-    try {
-      codeSocket.current.emit(event, data);
-      return true;
-    } catch (error) {
-      console.error("Error emitting code event:", error);
-      // Try to reconnect if emit fails
-      if (codeSocket.current.sessionId) {
-        setTimeout(() => {
-          initializeCodeSocket(codeSocket.current.sessionId);
-        }, 1000);
+    // Create connection to /code namespace
+    const codeSocketInstance = io(`${baseURL}/code`, {
+      withCredentials: true,
+      auth: {
+        token: localStorage.getItem("token"),
+        userId: userInfo._id || userInfo.id,
+      },
+      query: {
+        userId: userInfo._id || userInfo.id,
+        sessionId: sessionId,
+      },
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      timeout: 20000,
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 2000,
+    });
+
+    // Connection events
+    codeSocketInstance.on("connect", () => {
+      console.log("✅ Connected to code collaboration server");
+      setCodeConnectionState("connected");
+
+      // Auto-join session on connect
+      console.log(`🎯 Auto-joining session: ${sessionId}`);
+      codeSocketInstance.emit("join-code-session", {
+        sessionId,
+        user: userInfo,
+      });
+    });
+
+    codeSocketInstance.on("disconnect", (reason) => {
+      console.log("❌ Code socket disconnected:", reason);
+      setCodeConnectionState("disconnected");
+    });
+
+    codeSocketInstance.on("connect_error", (error) => {
+      console.error("🚨 Code socket connection error:", error);
+      setCodeConnectionState("error");
+    });
+
+    codeSocketInstance.on("reconnect", () => {
+      console.log("✅ Code socket reconnected");
+      setCodeConnectionState("connected");
+
+      // Rejoin session on reconnect
+      codeSocketInstance.emit("join-code-session", {
+        sessionId,
+        user: userInfo,
+      });
+    });
+
+    codeSocket.current = codeSocketInstance;
+    return codeSocketInstance;
+  };
+
+  const disconnectCodeSocket = () => {
+    if (codeSocket.current) {
+      console.log("🧹 Disconnecting code socket...");
+      codeSocket.current.disconnect();
+      codeSocket.current = null;
+      setCodeConnectionState("disconnected");
+    }
+  };
+
+  // Provide both sockets and helper functions
+  const socketValue = {
+    // Chat socket
+    socket: socket.current,
+    connectionState,
+    isConnected: connectionState === "connected",
+    emit: (event, data) => {
+      if (socket.current && socket.current.connected) {
+        socket.current.emit(event, data);
+      } else {
+        console.warn("⚠️ Cannot emit to chat socket - not connected:", event);
       }
-      return false;
-    }
-  } else {
-    console.warn("Cannot emit to code socket - not connected:", event);
-    
-    // Auto-reconnect attempt
-    if (codeSocket.current?.sessionId && codeConnectionState !== "connecting") {
-      console.log("Attempting to reconnect for emit...");
-      initializeCodeSocket(codeSocket.current.sessionId);
-    }
-    
-    return false;
-  }
-};
+    },
+
+    // Code socket
+    codeSocket: codeSocket.current,
+    codeConnectionState,
+    isCodeConnected: codeConnectionState === "connected",
+    initializeCodeSocket,
+    disconnectCodeSocket,
+    emitCode: (event, data) => {
+      if (codeSocket.current && codeSocket.current.connected) {
+        codeSocket.current.emit(event, data);
+        return true;
+      } else {
+        console.warn("⚠️ Cannot emit to code socket - not connected:", event);
+        return false;
+      }
+    },
+  };
 
   return (
     <SocketContext.Provider value={socketValue}>
