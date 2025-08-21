@@ -165,11 +165,13 @@ codeSessionSchema.methods.addParticipant = function(participantData) {
   );
   
   if (existingIndex >= 0) {
-    // Update existing participant
+    // Update existing participant's socket and status
     this.participants[existingIndex] = {
       ...this.participants[existingIndex].toObject(),
-      ...participantData,
-      lastActive: new Date()
+      socketId: participantData.socketId, // Update socket ID
+      lastActive: new Date(),
+      color: this.participants[existingIndex].color, // Keep existing color
+      cursor: participantData.cursor || this.participants[existingIndex].cursor
     };
   } else {
     // Add new participant
