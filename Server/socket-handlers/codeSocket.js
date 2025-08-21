@@ -138,43 +138,18 @@ const handleCodeCollaboration = (io) => {
       }
     });
 
-    // Handle real-time code changes - CRITICAL FIX
+    // Handle real-time code changes - HIGH PERFORMANCE VERSION
+    const codeUpdateQueue = new Map(); // Queue for batching database updates
+    const BATCH_DELAY = 500; // Batch window in milliseconds
+
     socket.on("code-change", async (data) => {
       const { sessionId, code, changes, userId, timestamp } = data;
 
-      console.log(`📝 Code change from user ${userId} in session ${sessionId}`);
-      console.log(`📝 Code length: ${code?.length} characters`);
-      console.log(`📝 Socket rooms:`, Array.from(socket.rooms));
-
       try {
-        // Verify user is in this session
-        if (socket.sessionId !== sessionId) {
-          console.log(
-            `⚠️  User ${userId} trying to edit session they're not in (${socket.sessionId} vs ${sessionId})`
-          );
-          return;
-        }
+        // Quick validation (non-blocking)
+        if (socket.sessionId !== sessionId) return;
 
-        // Update code in database
-        const session = await CodeSession.findOneAndUpdate(
-          { sessionId },
-          {
-            code,
-            lastModified: new Date(),
-            $inc: { "stats.totalEdits": 1 },
-          },
-          { new: true }
-        );
-
-        if (!session) {
-          console.log(`❌ Session ${sessionId} not found for code update`);
-          socket.emit("error", { message: "Session not found" });
-          return;
-        }
-
-        console.log(`💾 Code saved to database for session ${sessionId}`);
-
-        // Broadcast to OTHER users in the session (exclude sender)
+        // STEP 1: Immediate broadcast to other users (highest priority)
         const updateData = {
           sessionId,
           code,
@@ -184,22 +159,29 @@ const handleCodeCollaboration = (io) => {
           timestamp: timestamp || Date.now(),
         };
 
-        // Use the namespace to broadcast
-        socket.to(sessionId).emit("code-update", updateData);
-        console.log(
-          `📡 Broadcasted code update to other users in room ${sessionId}`
-        );
+        // Broadcast immediately without waiting
+        socket.to(sessionId).volatile.emit("code-update", updateData);
 
-        // Verify broadcast
-        const roomClients = await codeNamespace.in(sessionId).fetchSockets();
-        const otherClients = roomClients.filter(
-          (client) => client.id !== socket.id
-        );
-        console.log(
-          `📊 Broadcasted to ${otherClients.length} other clients in room`
-        );
+        // STEP 2: Queue database update (batch processing)
+        clearTimeout(codeUpdateQueue.get(sessionId));
+        codeUpdateQueue.set(sessionId, setTimeout(async () => {
+          try {
+            await CodeSession.findOneAndUpdate(
+              { sessionId },
+              {
+                code,
+                lastModified: new Date(),
+                $inc: { "stats.totalEdits": 1 }
+              },
+              { new: true }
+            ).exec(); // Use exec() for true async operation
+          } catch (err) {
+            console.error("Database update error:", err);
+          }
+        }, BATCH_DELAY));
+
       } catch (error) {
-        console.error("❌ Code change error:", error);
+        console.error("Code change error:", error);
         socket.emit("error", {
           message: "Failed to update code",
           error: error.message,
