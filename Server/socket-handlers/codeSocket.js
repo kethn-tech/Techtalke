@@ -16,22 +16,41 @@ const handleCodeCollaboration = (io) => {
     socket.on("join-code-session", async (data) => {
       const { sessionId, user } = data;
       const userId = (user._id || user.id)?.toString();
-      // Normalize sessionId to ensure consistent comparison
-      const normalizedSessionId = sessionId.trim().toLowerCase();
-
-      console.log(`User ${userId} joining session: ${normalizedSessionId}`);
+      
+      // Extract the session name (everything before the timestamp/unique ID)
+      const sessionName = sessionId.split('_')[0].trim().toLowerCase();
+      const timestamp = sessionId.split('_')[1] || '';
+      
+      console.log(`User ${userId} joining session with name: ${sessionName}`);
 
       try {
-        // Get session first (check cache first)
-        let session = sessionCache.get(normalizedSessionId);
-        if (!session) {
-          // Try to find existing session with case-insensitive search
-          session = await CodeSession.findOne({
-            $or: [
-              { sessionId: normalizedSessionId },
-              { sessionId: { $regex: new RegExp(`^${normalizedSessionId}$`, 'i') } }
-            ]
-          });
+        // First try to find an active session with the same name
+        let existingSessions = [];
+        
+        // Check cache first
+        for (const [cachedId, cachedSession] of sessionCache.entries()) {
+          if (cachedId.split('_')[0].toLowerCase() === sessionName) {
+            existingSessions.push(cachedSession);
+          }
+        }
+        
+        // If not in cache, check database
+        if (existingSessions.length === 0) {
+          existingSessions = await CodeSession.find({
+            sessionId: { 
+              $regex: new RegExp(`^${sessionName}_`, 'i') 
+            }
+          }).sort({ createdAt: -1 }); // Get most recent first
+        }
+        
+        let session;
+        if (existingSessions.length > 0) {
+          // Use the most recently created session
+          session = existingSessions[0];
+          console.log(`Joining existing session: ${session.sessionId}`);
+        } else {
+          // If no session exists, use the current sessionId
+          session = await CodeSession.findOne({ sessionId });
           
           if (!session) {
             socket.emit("error", { message: "Session not found" });
@@ -59,10 +78,11 @@ const handleCodeCollaboration = (io) => {
           }
         });
 
-        // Join new session with normalized ID
-        await socket.join(normalizedSessionId);
+        // Join using the session's actual ID
+        const activeSessionId = session.sessionId;
+        await socket.join(activeSessionId);
         socket.userId = userId;
-        socket.sessionId = normalizedSessionId;
+        socket.sessionId = activeSessionId;
         socket.userInfo = user;
 
         // Generate user color
