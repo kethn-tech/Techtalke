@@ -2,9 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import commonjs from '@rollup/plugin-commonjs';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // Base URL for production
+  base: '/',
   plugins: [
     react({
       jsxRuntime: 'automatic',
@@ -18,8 +24,10 @@ export default defineConfig({
   build: {
     sourcemap: true,
     chunkSizeWarningLimit: 1500,
-    minify: 'esbuild',
-    target: 'esnext',
+    minify: 'terser',
+    target: 'es2020',
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
       external: [
         "fs",
