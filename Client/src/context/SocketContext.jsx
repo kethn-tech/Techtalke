@@ -33,8 +33,14 @@ export const SocketProvider = ({ children }) => {
     removeFromGroup,
   } = useStore();
 
+  // Determine the Socket.io base URL dynamically
+  // 1. Prefer explicit VITE_APP_SERVER_URL from Vite env
+  // 2. Fallback to current browser origin (useful for local development)
+  // 3. Finally, default to the deployed Render URL
   const baseURL =
-    import.meta.env.VITE_APP_SERVER_URL || "https://techtalke.onrender.com";
+    import.meta.env.VITE_APP_SERVER_URL ||
+    (typeof window !== "undefined" && window.location.hostname.includes("localhost") ? `http://${window.location.hostname}:5000` : (typeof window !== "undefined" ? window.location.origin : "")) ||
+    "https://techtalke.onrender.com";
 
   // Chat Socket (existing functionality)
   useEffect(() => {
