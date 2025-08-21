@@ -39,8 +39,7 @@ export const SocketProvider = ({ children }) => {
   // 3. Finally, default to the deployed Render URL
   const baseURL =
     import.meta.env.VITE_APP_SERVER_URL ||
-    (typeof window !== "undefined" && window.location.hostname.includes("localhost") ? `http://${window.location.hostname}:5000` : (typeof window !== "undefined" ? window.location.origin : "")) ||
-    "https://techtalke.onrender.com";
+    (typeof window !== "undefined" && window.location.hostname.includes("localhost") ? `http://${window.location.hostname}:5000` : "https://techtalke.onrender.com");
 
   // Chat Socket (existing functionality)
   useEffect(() => {
