@@ -16,19 +16,30 @@ const handleCodeCollaboration = (io) => {
     socket.on("join-code-session", async (data) => {
       const { sessionId, user } = data;
       const userId = (user._id || user.id)?.toString();
+      // Normalize sessionId to ensure consistent comparison
+      const normalizedSessionId = sessionId.trim().toLowerCase();
 
-      console.log(`User ${userId} joining session: ${sessionId}`);
+      console.log(`User ${userId} joining session: ${normalizedSessionId}`);
 
       try {
         // Get session first (check cache first)
-        let session = sessionCache.get(sessionId);
+        let session = sessionCache.get(normalizedSessionId);
         if (!session) {
-          session = await CodeSession.findOne({ sessionId });
+          // Try to find existing session with case-insensitive search
+          session = await CodeSession.findOne({
+            $or: [
+              { sessionId: normalizedSessionId },
+              { sessionId: { $regex: new RegExp(`^${normalizedSessionId}$`, 'i') } }
+            ]
+          });
+          
           if (!session) {
             socket.emit("error", { message: "Session not found" });
             return;
           }
-          sessionCache.set(sessionId, session);
+          // Always store with normalized ID in cache
+          session.sessionId = normalizedSessionId;
+          sessionCache.set(normalizedSessionId, session);
         }
 
         // Check if user is already in the session with a different socket
@@ -48,10 +59,10 @@ const handleCodeCollaboration = (io) => {
           }
         });
 
-        // Join new session
-        await socket.join(sessionId);
+        // Join new session with normalized ID
+        await socket.join(normalizedSessionId);
         socket.userId = userId;
-        socket.sessionId = sessionId;
+        socket.sessionId = normalizedSessionId;
         socket.userInfo = user;
 
         // Generate user color
