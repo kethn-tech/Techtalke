@@ -58,10 +58,50 @@ const CodeEditor = () => {
     if (userInfo && sessionId) {
       console.log("🔌 Initializing code socket for session:", sessionId);
 
+      // Get token from localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("⚠️ No token found in localStorage");
+        toast.error("Authentication token not found. Please log in again.");
+        setShowLoginModal(true);
+        return;
+      }
+
       const socket = initializeCodeSocket(sessionId);
       if (socket) {
-        setCodeSocket(socket);
-        setupCodeSocketEvents(socket);
+        // Setup connection event handlers first
+        socket.on("connect_error", (error) => {
+          console.error("🚨 Socket connection error:", error.message);
+          toast.error(`Connection error: ${error.message}`);
+          setCodeSocket(null);
+        });
+
+        socket.on("connect", () => {
+          console.log("✅ Code socket connected!");
+          setCodeSocket(socket);
+          setupCodeSocketEvents(socket);
+        });
+
+        socket.on("error", (error) => {
+          console.error("⚠️ Socket error:", error);
+          toast.error(error.message || "Socket error occurred");
+        });
+
+        // Handle reconnection attempts
+        socket.on("reconnecting", (attemptNumber) => {
+          console.log(`🔄 Attempting to reconnect... (${attemptNumber})`);
+          toast.info("Attempting to reconnect...");
+        });
+
+        socket.on("reconnect", () => {
+          console.log("✅ Successfully reconnected!");
+          toast.success("Reconnected successfully!");
+        });
+
+        socket.on("reconnect_error", (error) => {
+          console.error("❌ Reconnection failed:", error);
+          toast.error("Failed to reconnect. Please refresh the page.");
+        });
       }
 
       return () => {
