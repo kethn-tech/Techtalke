@@ -408,52 +408,6 @@ const emitCode = (event, data) => {
   }
 };
 
-// Add disconnectCodeSocket function
-const disconnectCodeSocket = () => {
-  if (codeSocket.current) {
-    console.log("🧹 Disconnecting code socket...");
-    try {
-      // Remove all listeners
-      codeSocket.current.removeAllListeners();
-      // Emit leave event if in a session
-      if (codeSocket.current.sessionId) {
-        codeSocket.current.emit("leave-session", { 
-          sessionId: codeSocket.current.sessionId 
-        });
-      }
-      // Disconnect the socket
-      codeSocket.current.disconnect();
-      codeSocket.current = null;
-      setCodeConnectionState("disconnected");
-    } catch (error) {
-      console.error("Error during code socket cleanup:", error);
-    }
-  }
-};
-
-  // Create socket value object with all methods and state
-  const socketValue = {
-    // Chat socket
-    socket: socket.current,
-    connectionState,
-    isConnected: connectionState === "connected",
-    emit: (event, data) => {
-      if (socket.current && socket.current.connected) {
-        socket.current.emit(event, data);
-      } else {
-        console.warn("⚠️ Cannot emit to chat socket - not connected:", event);
-      }
-    },
-
-    // Code socket
-    codeSocket: codeSocket.current,
-    codeConnectionState,
-    isCodeConnected: codeConnectionState === "connected",
-    initializeCodeSocket,
-    disconnectCodeSocket,
-    emitCode
-  };
-
   return (
     <SocketContext.Provider value={socketValue}>
       {children}

@@ -16,61 +16,10 @@ const handleCodeCollaboration = (io) => {
     socket.on("join-code-session", async (data) => {
       const { sessionId, user } = data;
       const userId = (user._id || user.id)?.toString();
-      
-      // Extract the session name (everything before the timestamp/unique ID)
-      const sessionName = sessionId.split('_')[0].trim().toLowerCase();
-      const timestamp = sessionId.split('_')[1] || '';
-      
-      console.log(`User ${userId} joining session with name: ${sessionName}`);
+
+      console.log(`User ${userId} joining session: ${sessionId}`);
 
       try {
-        // First try to find an active session with the same name
-        let existingSessions = [];
-        
-        // Check cache first
-        for (const [cachedId, cachedSession] of sessionCache.entries()) {
-          if (cachedId.split('_')[0].toLowerCase() === sessionName) {
-            existingSessions.push(cachedSession);
-          }
-        }
-        
-        // If not in cache, check database
-        if (existingSessions.length === 0) {
-          existingSessions = await CodeSession.find({
-            sessionId: { 
-              $regex: new RegExp(`^${sessionName}_`, 'i') 
-            }
-          }).sort({ createdAt: -1 }); // Get most recent first
-        }
-        
-        let session;
-        if (existingSessions.length > 0) {
-          // Use the most recently created session
-          session = existingSessions[0];
-          console.log(`Joining existing session: ${session.sessionId}`);
-        } else {
-          // If no session exists, use the current sessionId
-          session = await CodeSession.findOne({ sessionId });
-          
-          if (!session) {
-            socket.emit("error", { message: "Session not found" });
-            return;
-          }
-          // Always store with normalized ID in cache
-          session.sessionId = normalizedSessionId;
-          sessionCache.set(normalizedSessionId, session);
-        }
-
-        // Check if user is already in the session with a different socket
-        const existingSocket = await codeNamespace.in(sessionId).fetchSockets()
-          .then(sockets => sockets.find(s => s.userId === userId && s.id !== socket.id));
-
-        if (existingSocket) {
-          // Disconnect the old socket
-          console.log(`Disconnecting old socket ${existingSocket.id} for user ${userId}`);
-          existingSocket.disconnect(true);
-        }
-
         // Leave any previous rooms
         Array.from(socket.rooms).forEach((room) => {
           if (room !== socket.id) {
@@ -78,18 +27,37 @@ const handleCodeCollaboration = (io) => {
           }
         });
 
-        // Join using the session's actual ID
-        const activeSessionId = session.sessionId;
-        await socket.join(activeSessionId);
+        await socket.join(sessionId);
         socket.userId = userId;
-        socket.sessionId = activeSessionId;
+        socket.sessionId = sessionId;
         socket.userInfo = user;
 
+        // Get session (check cache first)
+        let session = sessionCache.get(sessionId);
+        if (!session) {
+          session = await CodeSession.findOne({ sessionId });
+          if (!session) {
+            socket.emit("error", { message: "Session not found" });
+            return;
+          }
+          sessionCache.set(sessionId, session);
+        }
+
         // Generate user color
-        const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F"];
-        const usedColors = session.participants.map(p => p.color);
-        const userColor = colors.find(color => !usedColors.includes(color)) || 
-                         colors[Math.floor(Math.random() * colors.length)];
+        const colors = [
+          "#FF6B6B",
+          "#4ECDC4",
+          "#45B7D1",
+          "#96CEB4",
+          "#FFEAA7",
+          "#DDA0DD",
+          "#98D8C8",
+          "#F7DC6F",
+        ];
+        const usedColors = session.participants.map((p) => p.color);
+        const userColor =
+          colors.find((color) => !usedColors.includes(color)) ||
+          colors[Math.floor(Math.random() * colors.length)];
 
         // Add/update participant
         const participantData = {
@@ -101,7 +69,9 @@ const handleCodeCollaboration = (io) => {
           lastActive: new Date(),
         };
 
-        const existingIndex = session.participants.findIndex(p => p.userId?.toString() === userId);
+        const existingIndex = session.participants.findIndex(
+          (p) => p.userId?.toString() === userId
+        );
         if (existingIndex >= 0) {
           session.participants[existingIndex] = participantData;
         } else {
@@ -116,7 +86,7 @@ const handleCodeCollaboration = (io) => {
           try {
             await session.save();
           } catch (err) {
-            console.error('Error saving session:', err);
+            console.error("Error saving session:", err);
           }
         });
 
@@ -125,7 +95,7 @@ const handleCodeCollaboration = (io) => {
           sessionId: session.sessionId,
           code: session.code,
           language: session.language,
-          participants: session.participants.map(p => ({
+          participants: session.participants.map((p) => ({
             userId: p.userId,
             username: p.username,
             color: p.color,
@@ -137,16 +107,17 @@ const handleCodeCollaboration = (io) => {
         socket.to(sessionId).emit("user-joined", participantData);
 
         // Broadcast updated participants list
-        const currentParticipants = session.participants.map(p => ({
+        const currentParticipants = session.participants.map((p) => ({
           userId: p.userId,
           username: p.username,
           color: p.color,
           cursor: p.cursor,
         }));
 
-        codeNamespace.to(sessionId).emit("participants-update", currentParticipants);
+        codeNamespace
+          .to(sessionId)
+          .emit("participants-update", currentParticipants);
         console.log(`Participants update sent for session ${sessionId}`);
-
       } catch (error) {
         console.error("Error joining code session:", error);
         socket.emit("error", { message: "Failed to join session" });
@@ -187,21 +158,23 @@ const handleCodeCollaboration = (io) => {
 
         // STEP 3: Database update (debounced to reduce load)
         clearTimeout(codeUpdateQueue.get(sessionId));
-        codeUpdateQueue.set(sessionId, setTimeout(async () => {
-          try {
-            await CodeSession.updateOne(
-              { sessionId },
-              { 
-                $set: { code, lastModified: new Date() },
-                $inc: { "stats.totalEdits": 1 }
-              }
-            );
-            console.log(`Database updated for session ${sessionId}`);
-          } catch (error) {
-            console.error('Database update error:', error);
-          }
-        }, 300)); // 300ms debounce
-
+        codeUpdateQueue.set(
+          sessionId,
+          setTimeout(async () => {
+            try {
+              await CodeSession.updateOne(
+                { sessionId },
+                {
+                  $set: { code, lastModified: new Date() },
+                  $inc: { "stats.totalEdits": 1 },
+                }
+              );
+              console.log(`Database updated for session ${sessionId}`);
+            } catch (error) {
+              console.error("Database update error:", error);
+            }
+          }, 300)
+        ); // 300ms debounce
       } catch (error) {
         console.error("Code change error:", error);
         socket.emit("error", { message: "Failed to update code" });
@@ -218,7 +191,9 @@ const handleCodeCollaboration = (io) => {
         // Update cache
         const session = sessionCache.get(sessionId);
         if (session) {
-          const participant = session.participants.find(p => p.userId === socket.userId);
+          const participant = session.participants.find(
+            (p) => p.userId === socket.userId
+          );
           if (participant) {
             participant.cursor = position;
             participant.lastActive = new Date();
@@ -236,15 +211,14 @@ const handleCodeCollaboration = (io) => {
         setImmediate(async () => {
           await CodeSession.updateOne(
             { sessionId, "participants.userId": socket.userId },
-            { 
-              $set: { 
+            {
+              $set: {
                 "participants.$.cursor": position,
-                "participants.$.lastActive": new Date()
-              }
+                "participants.$.lastActive": new Date(),
+              },
             }
-          ).catch(err => console.error('Cursor update error:', err));
+          ).catch((err) => console.error("Cursor update error:", err));
         });
-
       } catch (error) {
         console.error("Cursor move error:", error);
       }
@@ -296,9 +270,8 @@ const handleCodeCollaboration = (io) => {
           await CodeSession.updateOne(
             { sessionId },
             { $set: { language, lastModified: new Date() } }
-          ).catch(err => console.error('Language update error:', err));
+          ).catch((err) => console.error("Language update error:", err));
         });
-
       } catch (error) {
         console.error("Language change error:", error);
       }
@@ -310,48 +283,45 @@ const handleCodeCollaboration = (io) => {
 
       if (socket.userId && socket.sessionId) {
         try {
-          // Check if user has another active socket in the same session
-          const activeSockets = await codeNamespace.in(socket.sessionId).fetchSockets();
-          const hasAnotherSocket = activeSockets.some(s => 
-            s.userId === socket.userId && s.id !== socket.id
-          );
+          // Update cache
+          const session = sessionCache.get(socket.sessionId);
+          if (session) {
+            session.participants = session.participants.filter(
+              (p) => p.userId !== socket.userId
+            );
 
-          // Only remove participant if this was their last socket
-          if (!hasAnotherSocket) {
-            // Update cache
-            const session = sessionCache.get(socket.sessionId);
-            if (session) {
-              session.participants = session.participants.filter(p => p.userId !== socket.userId);
-              
-              if (session.participants.length === 0) {
-                sessionCache.delete(socket.sessionId);
-              } else {
-                sessionCache.set(socket.sessionId, session);
-
-                // Send updated participants list
-                const currentParticipants = session.participants.map(p => ({
-                  userId: p.userId,
-                  username: p.username,
-                  color: p.color,
-                  cursor: p.cursor,
-                }));
-
-                codeNamespace.to(socket.sessionId).emit("participants-update", currentParticipants);
-              }
+            if (session.participants.length === 0) {
+              sessionCache.delete(socket.sessionId);
+            } else {
+              sessionCache.set(socket.sessionId, session);
             }
-            
-            // Notify others only if this was the user's last socket
-            socket.to(socket.sessionId).emit("user-left", { 
-              userId: socket.userId 
-            });
+          }
 
-            // Update database (non-blocking)
-            setImmediate(async () => {
-              await CodeSession.updateOne(
-                { sessionId: socket.sessionId },
-                { $pull: { participants: { userId: socket.userId } } }
-              ).catch(err => console.error('Disconnect cleanup error:', err));
-            });
+          // Database cleanup (non-blocking)
+          setImmediate(async () => {
+            await CodeSession.updateOne(
+              { sessionId: socket.sessionId },
+              { $pull: { participants: { userId: socket.userId } } }
+            ).catch((err) => console.error("Disconnect cleanup error:", err));
+          });
+
+          // Notify others
+          socket
+            .to(socket.sessionId)
+            .emit("user-left", { userId: socket.userId });
+
+          // Send updated participants list
+          if (session && session.participants.length > 0) {
+            const currentParticipants = session.participants.map((p) => ({
+              userId: p.userId,
+              username: p.username,
+              color: p.color,
+              cursor: p.cursor,
+            }));
+
+            codeNamespace
+              .to(socket.sessionId)
+              .emit("participants-update", currentParticipants);
           }
         } catch (error) {
           console.error("Disconnect cleanup error:", error);
