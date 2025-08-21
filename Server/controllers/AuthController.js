@@ -31,21 +31,14 @@ const logIn = async (req, res) => {
       });
     }
 
-    // Create two tokens: one for HTTP-only cookie and one for client-side
-    const cookieToken = jwt.sign(
+    const token = jwt.sign(
       { email: data.email, id: data._id.toString(), role: data.role },
       process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 
-    const clientToken = jwt.sign(
-      { email: data.email, id: data._id.toString(), role: data.role },
-      process.env.JWT_KEY,
-      { expiresIn: "3d" }
-    );
-
-    // Set HTTP-only cookie for API auth
-    res.cookie("token", cookieToken, {
+    // 🔧 FIXED: Cross-site cookie settings for Vercel<->Render
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true, // Always true for HTTPS (required for production)
       sameSite: "none", // Required for cross-site cookies
@@ -55,10 +48,8 @@ const logIn = async (req, res) => {
 
     console.log(`✅ User logged in: ${data.email} (Role: ${data.role})`);
 
-    // Return the client token for socket auth
     return res.status(200).json({
       success: true,
-      token: clientToken, // Add token to response for client-side storage
       user: {
         _id: data._id,
         email: data.email,
@@ -189,20 +180,14 @@ const githubCallback = async (req, res) => {
       });
     }
 
-    const cookieToken = jwt.sign(
+    const token = jwt.sign(
       { email: user.email, id: user._id.toString(), role: user.role },
       process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 
-    const clientToken = jwt.sign(
-      { email: user.email, id: user._id.toString(), role: user.role },
-      process.env.JWT_KEY,
-      { expiresIn: "3d" }
-    );
-
-    // Set HTTP-only cookie for API auth
-    res.cookie("token", cookieToken, {
+    // 🔧 FIXED: Cross-site cookie settings
+    res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
@@ -210,10 +195,8 @@ const githubCallback = async (req, res) => {
       maxAge: 3 * 24 * 60 * 60 * 1000,
     });
 
-    // Redirect with token in query param
-    const redirectUrl = new URL(`${process.env.CLIENT_URL}/auth`);
-    redirectUrl.searchParams.append("token", clientToken);
-    res.redirect(redirectUrl.toString());
+    // 🔧 FIXED: Redirect to CLIENT_URL from environment
+    res.redirect(`${process.env.CLIENT_URL}/auth`);
   } catch (err) {
     console.error("GitHub OAuth error:", err);
     res.status(500).json({ error: "GitHub OAuth failed" });

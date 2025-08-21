@@ -1,16 +1,11 @@
 // Server/socket-handlers/codeSocket.js
 const CodeSession = require('../models/CodeSessionModel');
 
-const socketAuthMiddleware = require('../middlewares/socketAuthMiddleware');
-
 const handleCodeCollaboration = (io) => {
   console.log("🖥️  Setting up code collaboration handlers...");
 
   // Create a namespace specifically for code collaboration
   const codeNamespace = io.of("/code");
-
-  // Apply authentication middleware to code namespace
-  codeNamespace.use(socketAuthMiddleware);
 
   codeNamespace.on("connection", (socket) => {
     console.log(`🔌 Code collaboration user connected: ${socket.id}`);

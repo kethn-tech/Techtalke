@@ -33,6 +33,7 @@ import NET from "vanta/dist/vanta.net.min";
 
 
 const Auth = () => {
+  // All your existing state (unchanged)
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,42 +41,6 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { setUserInfo } = useStore();
   const navigate = useNavigate();
-
-  // Handle social login redirects
-  useEffect(() => {
-    // Check URL parameters for token
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
-    
-    if (token) {
-      // Store token in localStorage
-      localStorage.setItem("token", token);
-      
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Get user info using token
-      const fetchUserInfo = async () => {
-        try {
-          const response = await apiClient.get("api/auth/userInfo", {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-          
-          if (response.data.success && response.data.user) {
-            setUserInfo(response.data.user);
-            navigate(response.data.user.profileSetup ? "/chat" : "/profile");
-          }
-        } catch (error) {
-          console.error("Failed to fetch user info:", error);
-          toast.error("Authentication failed. Please try again.");
-        }
-      };
-      
-      fetchUserInfo();
-    }
-  }, []);
 
   // Vanta.js setup
   const [vantaEffect, setVantaEffect] = useState(null);
@@ -146,14 +111,7 @@ const Auth = () => {
           { withCredentials: true }
         );
         if (response.data.user?._id) {
-          // Store user info in zustand store
           setUserInfo(response.data.user);
-
-          // Store the token in localStorage for socket auth
-          if (response.data.token) {
-            localStorage.setItem("token", response.data.token);
-          }
-
           toast.success("Logged in successfully");
           navigate(response.data.user.profileSetup ? "/chat" : "/profile");
         }

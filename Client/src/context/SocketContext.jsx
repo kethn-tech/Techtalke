@@ -284,33 +284,23 @@ export const SocketProvider = ({ children }) => {
     console.log("🔌 Initializing code collaboration socket...");
 
     // Create connection to /code namespace
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("⚠️ No authentication token found");
-      return null;
-    }
-
-    // Create connection to /code namespace
     const codeSocketInstance = io(`${baseURL}/code`, {
       withCredentials: true,
       auth: {
-        token: token,
+        token: localStorage.getItem("token"),
         userId: userInfo._id || userInfo.id,
       },
       query: {
         userId: userInfo._id || userInfo.id,
         sessionId: sessionId,
-        token: token, // Also include in query for compatibility
       },
       transports: ["polling", "websocket"],
       upgrade: true,
       timeout: 20000,
-      forceNew: true, // Create new connection each time
+      forceNew: true,
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
-      reconnectionDelayMax: 5000,
-      randomizationFactor: 0.5,
     });
 
     // Connection events
