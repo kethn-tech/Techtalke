@@ -46,13 +46,7 @@ app.use(cookieParser());
 
 // Configure CORS
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin || ALLOWED_ORIGINS.includes(origin) || /techtalke\\.vercel\\.app$/.test(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: ALLOWED_ORIGINS,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
   allowedHeaders: [
@@ -185,13 +179,7 @@ const server = http.createServer(app);
 // ✨ ENHANCED: Socket.io configuration with better error handling
 const io = new Server(server, {
   cors: {
-    origin: (origin, callback) => {
-      if (!origin || ALLOWED_ORIGINS.includes(origin) || /techtalke\\.vercel\\.app$/.test(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: ALLOWED_ORIGINS,
     methods: ["GET", "POST"],
     credentials: true,
   },
