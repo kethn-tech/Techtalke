@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import path from 'path';
-
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const { execSync } = require('child_process');
+const path = require('path');
 
 // Ensure we're in the project directory
 process.chdir(path.resolve(__dirname));
@@ -17,7 +11,6 @@ execSync('npm install', { stdio: 'inherit' });
 
 console.log('Building project...');
 try {
-  // Use the full path to vite
   execSync('node ./node_modules/.bin/vite build', { stdio: 'inherit' });
 } catch (error) {
   console.error('Build failed:', error);

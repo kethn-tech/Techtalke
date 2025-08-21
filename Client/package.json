@@ -10,7 +10,7 @@
     "techtalke": "vite",
     "dev": "vite",
     "devhost": "vite --host",
-    "build": "node vercel-build.js",
+    "build": "node vercel-build.cjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
