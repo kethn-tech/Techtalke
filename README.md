@@ -1,8 +1,3 @@
-
-docker-compose exec mongodb mongosh -u admin -p KethanDB
-
-use techtalke
-
 # 🚀 TechTalke - MERN Stack + Socket.IO
 
 ![TechTalke Badge](https://img.shields.io/badge/TechTalke-MERN%20%2B%20Socket.IO-blue?style=for-the-badge)
@@ -145,8 +140,6 @@ MIT License
 **Made with 💙 by the TechTalke Team**
 
 **Crafted with 💙 by the Kethan R Ayatti**
-
-
 db.users.findOne({username: "kethan"}, {username: 1, email: 1, role: 1, isAdmin: 1, permissions: 1})
 
-exit
+ex
