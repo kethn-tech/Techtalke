@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: mern-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: mern_chat
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - mern-network
+
+  # Redis (optional - for production)
+  redis:
+    image: redis:7-alpine
+    container_name: mern-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - mern-network
+    profiles:
+      - production
+
+  # Backend Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: mern-server
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb://admin:password123@mongodb:27017/mern_chat?authSource=admin
+      - CLIENT_URL=http://localhost:5173
+      - PORT=4000
+      - REDIS_URL=redis://redis:6379
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - mern-network
+
+  # Frontend Client
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: mern-client
+    restart: unless-stopped
+    environment:
+      - VITE_APP_SERVER_URL=http://localhost:4000
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+    networks:
+      - mern-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  mern-network:
+    driver: bridge
+
+profiles:
+  production:
+    environment:
+      - NODE_ENV=production
