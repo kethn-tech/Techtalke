@@ -1,33 +1,32 @@
-version: '3.8'
 
 services:
   # MongoDB Database
   mongodb:
     image: mongo:6.0
-    container_name: mern-mongodb
+    container_name: techtalke-mongodb
     restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password123
-      MONGO_INITDB_DATABASE: mern_chat
+      MONGO_INITDB_ROOT_PASSWORD: KethanDB
+      MONGO_INITDB_DATABASE: techtalke_chat
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     networks:
-      - mern-network
+      - techtalke-network
 
-  # Redis (optional - for production)
+  # Redis (only for production)
   redis:
     image: redis:7-alpine
-    container_name: mern-redis
+    container_name: techtalke-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - mern-network
+      - techtalke-network
     profiles:
       - production
 
@@ -36,14 +35,14 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: mern-server
+    container_name: techtalke-server
     restart: unless-stopped
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=mongodb://admin:password123@mongodb:27017/mern_chat?authSource=admin
+      - DATABASE_URL=mongodb+srv://KethanDB:KethanDB@cluster0.xk7sm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
       - CLIENT_URL=http://localhost:5173
       - PORT=4000
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=A2r3n1l2sj5qtmv5t4tw54z374kjsl978pqjgk86o3ikyj6lr4q
       - CORS_ALLOWED_ORIGINS=http://localhost:5173
     ports:
       - "4000:4000"
@@ -53,33 +52,28 @@ services:
       - ./server:/app
       - /app/node_modules
     networks:
-      - mern-network
+      - techtalke-network
 
   # Frontend Client
   client:
     build:
       context: ./client
       dockerfile: Dockerfile.dev
-    container_name: mern-client
+    container_name: techtalke-client
     restart: unless-stopped
     environment:
       - VITE_APP_SERVER_URL=http://localhost:4000
     ports:
-      - "5173:80"
+      - "5173:5173"
     depends_on:
       - server
     networks:
-      - mern-network
+      - techtalke-network
 
 volumes:
   mongodb_data:
   redis_data:
 
 networks:
-  mern-network:
+  techtalke-network:
     driver: bridge
-
-profiles:
-  production:
-    environment:
-      - NODE_ENV=production

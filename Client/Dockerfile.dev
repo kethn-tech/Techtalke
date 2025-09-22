@@ -1,12 +1,6 @@
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-EXPOSE 5173
-
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+client:
+build:
+context: ./client
+dockerfile: Dockerfile.dev
+ports:
+- "5173:5173"  # Different port mapping for dev
