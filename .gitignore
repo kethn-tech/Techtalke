@@ -71,4 +71,5 @@ pids/
 tmp/
 temp/
 
-# Editor directories and files
+
+docker-compose.yml
