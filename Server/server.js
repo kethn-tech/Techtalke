@@ -216,25 +216,30 @@ io.engine.on("connection_error", (err) => {
   });
 });
 
+// Make io and userSocketMap available to app
+app.set('io', io);
+
 // Setup existing chat socket (your existing socket handling) - MAIN NAMESPACE
 setupSocket(io);
 
 // Setup Group Chat Socket
 try {
-  const userSocketMap = {};
+  const userSocketMap = new Map();
   // 🌐 Make user-socket map globally accessible so REST routes can emit socket events
   global.userSocketMap = userSocketMap;
+  app.set('userSocketMap', userSocketMap);
+  
   io.on('connection', (socket) => {
     const userId = socket.handshake.query.userId;
     if (userId) {
-      userSocketMap[userId] = socket.id;
+      userSocketMap.set(userId, socket.id);
     }
     
     handleGroupSocket(io, socket, userSocketMap);
     
     socket.on('disconnect', () => {
       if (userId) {
-        delete userSocketMap[userId];
+        userSocketMap.delete(userId);
       }
     });
   });

@@ -8,57 +8,91 @@ const teamMembers = [
     name: "Kethan R Ayatti",
     role: "Project Manager",
     subtitle: "Full-Stack Developer",
-    description: "Orchestrates project excellence while crafting seamless user experiences with modern development practices.",
-    image: "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6846a64863f03272880b2477.jpg",
+    description:
+      "Orchestrates project excellence while crafting seamless user experiences with modern development practices.",
+    image:
+      "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6846a64863f03272880b2477.jpg",
 
     color: "blue",
     details: {
-      skills: ["Project Management", "React-Vite", "API Integration", "UI/UX Design"],
+      skills: [
+        "Project Management",
+        "React-Vite",
+        "API Integration",
+        "UI/UX Design",
+      ],
       experience: "3+ Years",
       location: "Hubballi, Karnataka",
-      achievements: ["Led 5+ successful projects", "Certified Scrum Master", "UI/UX Excellence Award"],
+      achievements: [
+        "Led 5+ successful projects",
+        "Certified Scrum Master",
+        "UI/UX Excellence Award",
+      ],
     },
   },
   {
     name: "Rohit J",
     role: "Backend Engineer",
     subtitle: "Database Administrator",
-    description: "Architects scalable server infrastructure and optimizes database performance for enterprise applications.",
-    image: "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6847ab6263f03272880b25fc.jpg",
+    description:
+      "Architects scalable server infrastructure and optimizes database performance for enterprise applications.",
+    image:
+      "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6847ab6263f03272880b25fc.jpg",
     color: "emerald",
     details: {
       skills: ["Node.js", "Express.js", "MongoDB", "Socket.io"],
       experience: "3+ Years",
       location: "Bijapura, Karnataka",
-      achievements: ["Built 10+ RESTful APIs", "Database Performance Expert", "Real-time Systems Specialist"],
+      achievements: [
+        "Built 10+ RESTful APIs",
+        "Database Performance Expert",
+        "Real-time Systems Specialist",
+      ],
     },
   },
   {
     name: "Annapurneshwari Mallesh",
     role: "Business Analyst",
     subtitle: "QA Engineer",
-    description: "Bridges business requirements with technical implementation through comprehensive testing strategies.",
-    image: "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6814e57d70694c83baa5f74b.jpg",
+    description:
+      "Bridges business requirements with technical implementation through comprehensive testing strategies.",
+    image:
+      "https://res.cloudinary.com/datfhmdzv/image/upload/profile-images/6814e57d70694c83baa5f74b.jpg",
     color: "purple",
     details: {
-      skills: ["Testing Automation", "Business Analysis", "QA Strategies", "Documentation"],
+      skills: [
+        "Testing Automation",
+        "Business Analysis",
+        "QA Strategies",
+        "Documentation",
+      ],
       experience: "2+ Years",
       location: "Belgavi, Karnataka",
-      achievements: ["99% Bug Detection Rate", "Process Optimization Expert", "Agile Testing Certified"],
+      achievements: [
+        "99% Bug Detection Rate",
+        "Process Optimization Expert",
+        "Agile Testing Certified",
+      ],
     },
   },
   {
     name: "Sangamesh Hugar",
     role: "DevOps Engineer",
     subtitle: "Cloud Architect",
-    description: "Streamlines deployment pipelines and ensures robust automation for continuous delivery.",
-    image: "/assets/team/sangamesh.jpg",
+    description:
+      "Streamlines deployment pipelines and ensures robust automation for continuous delivery.",
+    image:
+      "https://res.cloudinary.com/datfhmdzv/image/upload/WhatsApp_Image_2025-08-20_at_18.50.28_844537af_cj3ljq.jpg",
     color: "orange",
     details: {
       skills: ["Render", "Vercel", "CI/CD", "Cloud Services"],
       experience: "2+ Years",
       location: "Hubballi, Karnataka",
-      achievements: ["Zero-downtime Deployments", "Infrastructure as Code Expert", "Cloud Cost Optimizer"],
+      achievements: [
+        "Zero-downtime Deployments",
+        "Infrastructure as Code Expert",
+        "Cloud Cost Optimizer",
+      ],
     },
   },
 ];

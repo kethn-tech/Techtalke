@@ -4,13 +4,6 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Message = require('../models/MessageModel');
 require('dotenv').config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-// Cache suggestions for 15 minutes with check period of 120 seconds
-const suggestionCache = new NodeCache({ stdTTL: 900, checkperiod: 120 });
-
-// Cache message context for 5 minutes with check period of 60 seconds
-const contextCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 // Comprehensive suggestion templates organized by business, technical, and communication contexts
 const quickResponseTemplates = {

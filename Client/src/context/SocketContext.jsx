@@ -94,14 +94,20 @@ export const SocketProvider = ({ children }) => {
 
           if (message.sender._id !== userInfo._id) {
             let isViewingThisChat = false;
-            
+
             if (selectedChatType === "dm") {
-              isViewingThisChat = selectedChatData && selectedChatData._id === message.sender._id;
+              isViewingThisChat =
+                selectedChatData && selectedChatData._id === message.sender._id;
             } else if (selectedChatType === "group" && message.group) {
-              isViewingThisChat = selectedChatData && selectedChatData._id === message.group._id;
+              isViewingThisChat =
+                selectedChatData && selectedChatData._id === message.group._id;
             }
 
-            if (isViewingThisChat && socket.current && socket.current.connected) {
+            if (
+              isViewingThisChat &&
+              socket.current &&
+              socket.current.connected
+            ) {
               setTimeout(() => {
                 if (selectedChatType === "dm") {
                   socket.current.emit("markMessagesAsRead", {
@@ -112,13 +118,15 @@ export const SocketProvider = ({ children }) => {
                   socket.current.emit("groupMessageRead", {
                     groupId: message.group._id,
                     messageId: message._id,
-                    userId: userInfo._id
+                    userId: userInfo._id,
                   });
                 }
               }, 300);
             } else {
               const senderName = message.sender.firstName
-                ? `${message.sender.firstName} ${message.sender.lastName || ""}`.trim()
+                ? `${message.sender.firstName} ${
+                    message.sender.lastName || ""
+                  }`.trim()
                 : "Someone";
 
               let notificationMsg = "New message received";
@@ -142,7 +150,7 @@ export const SocketProvider = ({ children }) => {
 
       socket.current.on("receiveMessage", handleReceiveMessage);
       socket.current.on("groupMessage", handleReceiveMessage);
-      
+
       socket.current.on("dmListUpdate", (dmList) => {
         try {
           setDmContacts(dmList);
@@ -155,7 +163,8 @@ export const SocketProvider = ({ children }) => {
         try {
           setGroupContacts(groupList);
           // If currently viewing a group that no longer exists, close the chat
-          const { selectedChatType, selectedChatData, closeChat } = useStore.getState();
+          const { selectedChatType, selectedChatData, closeChat } =
+            useStore.getState();
           if (
             selectedChatType === "group" &&
             selectedChatData &&
@@ -206,7 +215,9 @@ export const SocketProvider = ({ children }) => {
       const handleCalendarEventCreated = (event) => {
         try {
           const title = event?.title || "New Event";
-          const dateStr = event?.start ? format(parseISO(event.start), "PP") : "";
+          const dateStr = event?.start
+            ? format(parseISO(event.start), "PP")
+            : "";
           toast.success(`📅 ${title} – ${dateStr}`, { duration: 3000 });
         } catch (error) {
           console.error("Error handling calendar event creation:", error);
@@ -220,6 +231,80 @@ export const SocketProvider = ({ children }) => {
           useStore.getState().updateMessageReactions(message);
         } catch (error) {
           console.error("Error updating message reactions:", error);
+        }
+      });
+
+      // Enhanced Vault notification handlers
+      socket.current.on("vaultFileShared", ({ notification, sharedFile }) => {
+        try {
+          const senderName = notification.data.senderName;
+          const fileName = notification.data.fileName;
+          const fileSize = notification.data.fileSize;
+
+          // Enhanced notification with better styling and functionality
+          toast.success(
+            `🎁 File Shared! ${senderName} shared "${fileName}" with you (${(
+              fileSize /
+              (1024 * 1024)
+            ).toFixed(1)} MB)`,
+            {
+              duration: 6000,
+              action: {
+                label: "📋 View Files",
+                onClick: () => {
+                  // Trigger shared files panel open event
+                  window.dispatchEvent(new CustomEvent("openSharedFilesPanel"));
+                },
+              },
+              style: {
+                background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+                border: "1px solid rgba(99, 102, 241, 0.3)",
+                color: "white",
+              },
+            }
+          );
+
+          // Emit event to update shared files count
+          window.dispatchEvent(
+            new CustomEvent("vaultFileSharedReceived", {
+              detail: { sharedFile, notification },
+            })
+          );
+        } catch (error) {
+          console.error("Error handling vault file shared:", error);
+        }
+      });
+
+      socket.current.on("vaultFileAccepted", ({ fileName, recipientName }) => {
+        try {
+          // Enhanced acceptance notification
+          toast.success(
+            `🎉 ${recipientName} accepted your shared file "${fileName}"!`,
+            {
+              duration: 4000,
+              style: {
+                background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
+                border: "1px solid rgba(34, 197, 94, 0.3)",
+                color: "white",
+              },
+            }
+          );
+        } catch (error) {
+          console.error("Error handling vault file accepted:", error);
+        }
+      });
+
+      socket.current.on("vaultNotificationCount", ({ count }) => {
+        try {
+          // Emit event to update notification count
+          window.dispatchEvent(
+            new CustomEvent("vaultNotificationCountUpdated", {
+              detail: { count },
+            })
+          );
+          console.log("📊 Vault notification count updated:", count);
+        } catch (error) {
+          console.error("Error handling vault notification count:", error);
         }
       });
 
@@ -243,6 +328,9 @@ export const SocketProvider = ({ children }) => {
           socket.current.off("reconnect_attempt");
           socket.current.off("calendarEventCreated");
           socket.current.off("reactionUpdated");
+          socket.current.off("vaultFileShared");
+          socket.current.off("vaultFileAccepted");
+          socket.current.off("vaultNotificationCount");
           socket.current.disconnect();
           socket.current = null;
           setConnectionState("disconnected");

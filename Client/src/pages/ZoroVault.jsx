@@ -1,7 +1,35 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Upload, File, Download, Trash2, FileText, Image, Archive, Video, Music, Code, Search, Grid, List, Filter, Sparkles, Shield, Database, Zap, AlertTriangle, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import apiClient from '@/lib/apiClient';
+import {
+  Upload,
+  File,
+  Download,
+  Trash2,
+  FileText,
+  Image,
+  Archive,
+  Video,
+  Music,
+  Code,
+  Search,
+  Grid,
+  List,
+  Filter,
+  Sparkles,
+  Shield,
+  Database,
+  Zap,
+  AlertTriangle,
+  X,
+  Share,
+  Bell,
+  Users,
+  Inbox,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import apiClient from "@/lib/apiClient";
+import UserShareDialog from "@/components/vault/UserShareDialog";
+import SharedFilesPanel from "@/components/vault/SharedFilesPanel";
 
 // Delete Confirmation Dialog Component
 const DeleteDialog = ({ isOpen, onClose, onConfirm, fileName }) => {
@@ -32,7 +60,7 @@ const DeleteDialog = ({ isOpen, onClose, onConfirm, fileName }) => {
               >
                 <X className="w-5 h-5" />
               </button>
-              
+
               {/* Warning icon */}
               <motion.div
                 initial={{ scale: 0 }}
@@ -42,7 +70,7 @@ const DeleteDialog = ({ isOpen, onClose, onConfirm, fileName }) => {
               >
                 <AlertTriangle className="w-8 h-8 text-red-400" />
               </motion.div>
-              
+
               <h2 className="text-2xl font-bold text-white text-center mb-2">
                 Delete File
               </h2>
@@ -60,7 +88,10 @@ const DeleteDialog = ({ isOpen, onClose, onConfirm, fileName }) => {
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-4 border border-slate-700/30">
                   <div className="flex items-center justify-center gap-3">
                     <File className="w-5 h-5 text-slate-400" />
-                    <span className="font-medium text-white truncate max-w-xs" title={fileName}>
+                    <span
+                      className="font-medium text-white truncate max-w-xs"
+                      title={fileName}
+                    >
                       {fileName}
                     </span>
                   </div>
@@ -111,28 +142,77 @@ const ZoroVault = () => {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [filterType, setFilterType] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
+  const [filterType, setFilterType] = useState("all");
   const [dragActive, setDragActive] = useState(false);
-  const [deleteDialog, setDeleteDialog] = useState({ isOpen: false, fileId: null, fileName: '' });
+  const [deleteDialog, setDeleteDialog] = useState({
+    isOpen: false,
+    fileId: null,
+    fileName: "",
+  });
+  const [shareDialog, setShareDialog] = useState({
+    isOpen: false,
+    fileId: null,
+    fileName: "",
+  });
+  const [sharedFilesPanel, setSharedFilesPanel] = useState(false);
+  const [sharedFilesCount, setSharedFilesCount] = useState(0);
   const inputRef = useRef();
 
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/api/zoro');
+      const res = await apiClient.get("/api/zoro");
       setFiles(res.data.files || []);
     } catch (err) {
       console.error(err);
-      alert('Failed to load files');
+      alert("Failed to load files");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchSharedFilesCount = async () => {
+    try {
+      const res = await apiClient.get("/api/zoro/shared/received");
+      setSharedFilesCount(res.data.sharedFiles?.length || 0);
+    } catch (err) {
+      console.error("Failed to fetch shared files count:", err);
+    }
+  };
+
   useEffect(() => {
     fetchFiles();
+    fetchSharedFilesCount();
+
+    // Listen for real-time shared files updates
+    const handleSharedFileReceived = () => {
+      console.log("🔄 Updating shared files count due to new file received");
+      fetchSharedFilesCount();
+    };
+
+    const handleOpenSharedFilesPanel = () => {
+      console.log("📋 Opening shared files panel");
+      setSharedFilesPanel(true);
+    };
+
+    window.addEventListener(
+      "vaultFileSharedReceived",
+      handleSharedFileReceived
+    );
+    window.addEventListener("openSharedFilesPanel", handleOpenSharedFilesPanel);
+
+    return () => {
+      window.removeEventListener(
+        "vaultFileSharedReceived",
+        handleSharedFileReceived
+      );
+      window.removeEventListener(
+        "openSharedFilesPanel",
+        handleOpenSharedFilesPanel
+      );
+    };
   }, []);
 
   const handleUpload = async (fileList) => {
@@ -140,22 +220,22 @@ const ZoroVault = () => {
 
     const formData = new FormData();
     for (const file of fileList) {
-      formData.append('files', file);
+      formData.append("files", file);
     }
 
     try {
       setUploading(true);
-      await apiClient.post('/api/zoro/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      await apiClient.post("/api/zoro/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       await fetchFiles();
 
       if (inputRef.current) {
-        inputRef.current.value = '';
+        inputRef.current.value = "";
       }
     } catch (err) {
       console.error(err);
-      alert('Upload failed');
+      alert("Upload failed");
     } finally {
       setUploading(false);
     }
@@ -185,7 +265,7 @@ const ZoroVault = () => {
     setDeleteDialog({
       isOpen: true,
       fileId: id,
-      fileName: filename
+      fileName: filename,
     });
   };
 
@@ -193,7 +273,7 @@ const ZoroVault = () => {
     setDeleteDialog({
       isOpen: false,
       fileId: null,
-      fileName: ''
+      fileName: "",
     });
   };
 
@@ -204,47 +284,193 @@ const ZoroVault = () => {
       closeDeleteDialog();
     } catch (err) {
       console.error(err);
-      alert('Delete failed');
+      alert("Delete failed");
       closeDeleteDialog();
     }
   };
 
   const handleDownload = async (id) => {
     try {
-      const res = await apiClient.get(`/api/zoro/${id}/download`);
-      window.open(res.data.url, '_blank');
+      // First get file info to ensure we have the correct filename and mime type
+      const fileInfoResponse = await apiClient.get(`/api/zoro/${id}/download`);
+      const originalFilename = fileInfoResponse.data.filename;
+
+      // Then download the actual file as blob with streaming
+      const response = await apiClient.get(`/api/zoro/${id}/download`, {
+        params: { stream: "true" },
+        responseType: "blob",
+        headers: {
+          Accept: "application/octet-stream",
+        },
+      });
+
+      // Get filename from multiple sources with priority
+      let filename = originalFilename;
+
+      // Try to get filename from headers as backup
+      const contentDisposition = response.headers["content-disposition"];
+      const xOriginalFilename = response.headers["x-original-filename"];
+
+      if (xOriginalFilename) {
+        filename = decodeURIComponent(xOriginalFilename);
+      } else if (contentDisposition) {
+        // Handle both quoted and unquoted filenames
+        const filenameStarMatch = contentDisposition.match(
+          /filename\*=UTF-8''([^;]+)/
+        );
+        const filenameMatch = contentDisposition.match(
+          /filename="?([^"\\s;]+)"?/
+        );
+
+        if (filenameStarMatch) {
+          filename = decodeURIComponent(filenameStarMatch[1]);
+        } else if (filenameMatch) {
+          filename = filenameMatch[1].replace(/[\"']/g, "");
+        }
+      }
+
+      // Get content type from response headers or use original mime type
+      const contentType =
+        response.headers["content-type"] ||
+        fileInfoResponse.data.mimeType ||
+        "application/octet-stream";
+
+      console.log("Download info:", {
+        filename,
+        contentType,
+        originalMimeType: fileInfoResponse.data.mimeType,
+        responseType: typeof response.data,
+        dataSize: response.data.size,
+      });
+
+      // Create blob with correct MIME type to preserve file format
+      const blob = new Blob([response.data], { type: contentType });
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      // Create and trigger download
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      link.style.display = "none";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up blob URL
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 2000);
+
+      toast.success(`Downloaded ${filename} successfully!`);
     } catch (err) {
-      console.error(err);
-      alert('Download failed');
+      console.error("Download error:", err);
+
+      // Fallback: try direct Cloudinary URL method
+      try {
+        const res = await apiClient.get(`/api/zoro/${id}/download`);
+        const downloadUrl = res.data.url;
+        const filename = res.data.filename;
+
+        // Create a proper download link with Cloudinary's direct download URL
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.style.display = "none";
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        toast.success(`Downloaded ${filename} successfully!`);
+      } catch (fallbackErr) {
+        console.error("Fallback download error:", fallbackErr);
+        toast.error("Download failed. Please try again.");
+      }
+    }
+  };
+
+  const openShareDialog = (id, filename) => {
+    setShareDialog({
+      isOpen: true,
+      fileId: id,
+      fileName: filename,
+    });
+  };
+
+  const closeShareDialog = () => {
+    setShareDialog({
+      isOpen: false,
+      fileId: null,
+      fileName: "",
+    });
+  };
+
+  const handleShare = async (recipientEmail, message) => {
+    try {
+      const response = await apiClient.post(
+        `/api/zoro/${shareDialog.fileId}/share`,
+        {
+          recipientEmail,
+          message,
+        }
+      );
+
+      toast.success(`File shared successfully with ${recipientEmail}!`);
+      closeShareDialog();
+    } catch (err) {
+      console.error("Share failed:", err);
+      const errorMessage =
+        err.response?.data?.message || "Failed to share file";
+      toast.error(errorMessage);
+      throw err; // Re-throw to let the dialog handle loading state
     }
   };
 
   const getFileIcon = (mimeType) => {
     const iconProps = { className: "w-5 h-5" };
-    
-    if (mimeType.startsWith('image/')) return <Image {...iconProps} className="w-5 h-5 text-cyan-400" />;
-    if (mimeType.includes('pdf')) return <FileText {...iconProps} className="w-5 h-5 text-red-400" />;
-    if (mimeType.includes('zip') || mimeType.includes('rar')) return <Archive {...iconProps} className="w-5 h-5 text-orange-400" />;
-    if (mimeType.startsWith('video/')) return <Video {...iconProps} className="w-5 h-5 text-purple-400" />;
-    if (mimeType.startsWith('audio/')) return <Music {...iconProps} className="w-5 h-5 text-pink-400" />;
-    if (mimeType.includes('code') || mimeType.includes('javascript') || mimeType.includes('html')) return <Code {...iconProps} className="w-5 h-5 text-green-400" />;
+
+    if (mimeType.startsWith("image/"))
+      return <Image {...iconProps} className="w-5 h-5 text-cyan-400" />;
+    if (mimeType.includes("pdf"))
+      return <FileText {...iconProps} className="w-5 h-5 text-red-400" />;
+    if (mimeType.includes("zip") || mimeType.includes("rar"))
+      return <Archive {...iconProps} className="w-5 h-5 text-orange-400" />;
+    if (mimeType.startsWith("video/"))
+      return <Video {...iconProps} className="w-5 h-5 text-purple-400" />;
+    if (mimeType.startsWith("audio/"))
+      return <Music {...iconProps} className="w-5 h-5 text-pink-400" />;
+    if (
+      mimeType.includes("code") ||
+      mimeType.includes("javascript") ||
+      mimeType.includes("html")
+    )
+      return <Code {...iconProps} className="w-5 h-5 text-green-400" />;
     return <File {...iconProps} className="w-5 h-5 text-slate-400" />;
   };
 
   const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
-  const filteredFiles = files.filter(file => {
-    const matchesSearch = file.filename.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterType === 'all' || 
-      (filterType === 'images' && file.mimeType.startsWith('image/')) ||
-      (filterType === 'documents' && (file.mimeType.includes('pdf') || file.mimeType.includes('document') || file.mimeType.includes('presentation') || file.mimeType.includes('sheet'))) ||
-      (filterType === 'archives' && (file.mimeType.includes('zip') || file.mimeType.includes('rar')));
+  const filteredFiles = files.filter((file) => {
+    const matchesSearch = file.filename
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesFilter =
+      filterType === "all" ||
+      (filterType === "images" && file.mimeType.startsWith("image/")) ||
+      (filterType === "documents" &&
+        (file.mimeType.includes("pdf") ||
+          file.mimeType.includes("document") ||
+          file.mimeType.includes("presentation") ||
+          file.mimeType.includes("sheet"))) ||
+      (filterType === "archives" &&
+        (file.mimeType.includes("zip") || file.mimeType.includes("rar")));
     return matchesSearch && matchesFilter;
   });
 
@@ -348,20 +574,22 @@ const ZoroVault = () => {
             <div className="relative">
               {/* Tech accent lines */}
               <div className="absolute -top-4 left-0 w-24 h-0.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-transparent opacity-60" />
-              
+
               <h1 className="text-5xl font-black tracking-tight leading-none mb-2">
                 <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-transparent bg-clip-text">
                   ZoRo Vault
                 </span>
               </h1>
               <p className="text-slate-400 text-lg">
-                Enterprise-grade <span className="text-cyan-400">secure storage</span> for your digital assets
+                Enterprise-grade{" "}
+                <span className="text-cyan-400">secure storage</span> for your
+                digital assets
               </p>
-              
+
               {/* Tech accent lines bottom */}
               <div className="absolute -bottom-2 left-0 w-32 h-0.5 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-60" />
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Stats badges */}
               <motion.div
@@ -378,7 +606,7 @@ const ZoroVault = () => {
                   </div>
                 </div>
               </motion.div>
-              
+
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 className="bg-slate-800/40 backdrop-blur-xl rounded-2xl px-6 py-3 border border-slate-700/50 shadow-lg"
@@ -393,6 +621,79 @@ const ZoroVault = () => {
                   </div>
                 </div>
               </motion.div>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSharedFilesPanel(true)}
+                className={`relative bg-slate-800/40 backdrop-blur-xl rounded-2xl px-6 py-3 border shadow-lg transition-all duration-300 group ${
+                  sharedFilesCount > 0
+                    ? "border-purple-500/50 hover:border-purple-400/70 shadow-purple-500/10"
+                    : "border-slate-700/50 hover:border-purple-500/50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Inbox
+                      className={`w-5 h-5 transition-colors duration-300 ${
+                        sharedFilesCount > 0
+                          ? "text-purple-400"
+                          : "text-purple-400/70"
+                      }`}
+                    />
+                    {sharedFilesCount > 0 && (
+                      <motion.div
+                        key={sharedFilesCount} // Re-animate when count changes
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-slate-900 shadow-lg"
+                      >
+                        <motion.span
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {sharedFilesCount > 99 ? "99+" : sharedFilesCount}
+                        </motion.span>
+                      </motion.div>
+                    )}
+
+                    {/* Pulse ring for new files */}
+                    {sharedFilesCount > 0 && (
+                      <motion.div
+                        animate={{ scale: [1, 1.8], opacity: [0.5, 0] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-purple-500/30 rounded-full"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-sm text-slate-400">Shared Files</span>
+                    <div className="font-bold text-xl bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                      {sharedFilesCount}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Enhanced background effects */}
+                <div
+                  className={`absolute inset-0 rounded-2xl transition-opacity duration-300 ${
+                    sharedFilesCount > 0
+                      ? "bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-50 group-hover:opacity-70"
+                      : "bg-gradient-to-r from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-50"
+                  }`}
+                />
+
+                {/* Shimmer effect on hover */}
+                <motion.div
+                  animate={sharedFilesCount > 0 ? { x: [-100, 250] } : {}}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 opacity-0 group-hover:opacity-100"
+                />
+              </motion.button>
             </div>
           </div>
 
@@ -402,22 +703,22 @@ const ZoroVault = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
             className={`relative group overflow-hidden transition-all duration-500 ${
-              dragActive 
-                ? 'scale-105' 
-                : 'hover:scale-[1.02]'
+              dragActive ? "scale-105" : "hover:scale-[1.02]"
             }`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
           >
-            <div className={`relative border-2 border-dashed rounded-3xl p-12 transition-all duration-500 backdrop-blur-xl ${
-              dragActive 
-                ? 'border-cyan-400 bg-slate-800/60 shadow-2xl shadow-cyan-500/20' 
-                : 'border-slate-700/50 hover:border-cyan-500/50 bg-slate-800/30 hover:bg-slate-800/50'
-            }`}>
+            <div
+              className={`relative border-2 border-dashed rounded-3xl p-12 transition-all duration-500 backdrop-blur-xl ${
+                dragActive
+                  ? "border-cyan-400 bg-slate-800/60 shadow-2xl shadow-cyan-500/20"
+                  : "border-slate-700/50 hover:border-cyan-500/50 bg-slate-800/30 hover:bg-slate-800/50"
+              }`}
+            >
               {/* Animated background on hover */}
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-              
+
               {/* Corner tech accents */}
               <div className="absolute top-6 right-6 w-8 h-8 border-t-2 border-r-2 border-slate-600/30 group-hover:border-cyan-400/60 transition-colors duration-500" />
               <div className="absolute bottom-6 left-6 w-8 h-8 border-b-2 border-l-2 border-slate-600/30 group-hover:border-indigo-400/60 transition-colors duration-500" />
@@ -429,14 +730,16 @@ const ZoroVault = () => {
                 >
                   <Upload className="w-10 h-10 text-cyan-400" />
                 </motion.div>
-                
+
                 <h3 className="text-2xl font-bold mb-3 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                   Upload Files
                 </h3>
                 <p className="text-slate-400 mb-6 text-lg">
-                  {dragActive ? 'Drop files here to upload' : 'Drag and drop files here, or click to browse'}
+                  {dragActive
+                    ? "Drop files here to upload"
+                    : "Drag and drop files here, or click to browse"}
                 </p>
-                
+
                 <input
                   type="file"
                   multiple
@@ -444,7 +747,7 @@ const ZoroVault = () => {
                   ref={inputRef}
                   className="hidden"
                 />
-                
+
                 <motion.button
                   whileHover={{ scale: 1.02, y: -3 }}
                   whileTap={{ scale: 0.97 }}
@@ -470,10 +773,16 @@ const ZoroVault = () => {
                     <>
                       <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
                         className="w-5 h-5 border-2 border-white border-t-transparent rounded-full relative z-10"
                       />
-                      <span className="relative z-10">Processing Upload...</span>
+                      <span className="relative z-10">
+                        Processing Upload...
+                      </span>
                     </>
                   ) : (
                     <>
@@ -524,7 +833,7 @@ const ZoroVault = () => {
             {/* Search glow effect */}
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-blue-500/10 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <motion.select
               whileHover={{ scale: 1.02 }}
@@ -537,16 +846,16 @@ const ZoroVault = () => {
               <option value="documents">Documents</option>
               <option value="archives">Archives</option>
             </motion.select>
-            
+
             <div className="flex bg-slate-800/40 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-lg overflow-hidden">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode('grid')}
+                onClick={() => setViewMode("grid")}
                 className={`p-4 transition-all duration-300 ${
-                  viewMode === 'grid' 
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  viewMode === "grid"
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg"
+                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
                 <Grid className="w-5 h-5" />
@@ -554,11 +863,11 @@ const ZoroVault = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setViewMode('list')}
+                onClick={() => setViewMode("list")}
                 className={`p-4 transition-all duration-300 ${
-                  viewMode === 'list' 
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg' 
-                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                  viewMode === "list"
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg"
+                    : "text-slate-400 hover:text-white hover:bg-slate-700/50"
                 }`}
               >
                 <List className="w-5 h-5" />
@@ -586,13 +895,12 @@ const ZoroVault = () => {
                 Vault is Empty
               </h3>
               <p className="text-slate-400 text-lg">
-                {searchTerm || filterType !== 'all' 
-                  ? 'No files match your search criteria' 
-                  : 'Upload your first file to secure your digital assets'
-                }
+                {searchTerm || filterType !== "all"
+                  ? "No files match your search criteria"
+                  : "Upload your first file to secure your digital assets"}
               </p>
             </div>
-          ) : viewMode === 'grid' ? (
+          ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredFiles.map((file, index) => (
                 <motion.div
@@ -631,7 +939,7 @@ const ZoroVault = () => {
                       >
                         {getFileIcon(file.mimeType)}
                       </motion.div>
-                      
+
                       <div className="flex space-x-2">
                         <motion.button
                           whileHover={{ scale: 1.1 }}
@@ -645,7 +953,20 @@ const ZoroVault = () => {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => openDeleteDialog(file._id, file.filename)}
+                          onClick={() =>
+                            openShareDialog(file._id, file.filename)
+                          }
+                          className="p-3 text-slate-400 hover:text-indigo-400 hover:bg-slate-700/50 rounded-xl transition-all duration-300 group/btn"
+                          title="Share"
+                        >
+                          <Share className="w-4 h-4 group-hover/btn:translate-y-[-1px] transition-transform duration-300" />
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() =>
+                            openDeleteDialog(file._id, file.filename)
+                          }
                           className="p-3 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-xl transition-all duration-300 group/btn"
                           title="Delete"
                         >
@@ -653,22 +974,29 @@ const ZoroVault = () => {
                         </motion.button>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
-                      <h3 className="font-bold text-white truncate text-lg group-hover:scale-105 transition-transform duration-300" title={file.filename}>
+                      <h3
+                        className="font-bold text-white truncate text-lg group-hover:scale-105 transition-transform duration-300"
+                        title={file.filename}
+                      >
                         {file.filename}
                       </h3>
                       <div className="w-8 h-0.5 bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60 group-hover:w-12 group-hover:opacity-100 transition-all duration-500" />
                     </div>
-                    
+
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between items-center text-slate-400">
                         <span>Size:</span>
-                        <span className="font-medium text-cyan-400">{formatFileSize(file.size)}</span>
+                        <span className="font-medium text-cyan-400">
+                          {formatFileSize(file.size)}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center text-slate-400">
                         <span>Uploaded:</span>
-                        <span className="font-medium text-indigo-400">{new Date(file.createdAt).toLocaleDateString()}</span>
+                        <span className="font-medium text-indigo-400">
+                          {new Date(file.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
 
@@ -702,7 +1030,9 @@ const ZoroVault = () => {
                           Uploaded
                         </div>
                       </th>
-                      <th className="text-left py-6 px-8 font-bold text-white text-lg">Actions</th>
+                      <th className="text-left py-6 px-8 font-bold text-white text-lg">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-700/50">
@@ -723,11 +1053,16 @@ const ZoroVault = () => {
                               {getFileIcon(file.mimeType)}
                             </motion.div>
                             <div className="flex-1">
-                              <div className="font-semibold text-white text-lg group-hover:text-cyan-300 transition-colors duration-300" title={file.filename}>
-                                {file.filename.length > 40 ? file.filename.substring(0, 40) + '...' : file.filename}
+                              <div
+                                className="font-semibold text-white text-lg group-hover:text-cyan-300 transition-colors duration-300"
+                                title={file.filename}
+                              >
+                                {file.filename.length > 40
+                                  ? file.filename.substring(0, 40) + "..."
+                                  : file.filename}
                               </div>
                               <div className="text-sm text-slate-400 capitalize mt-1">
-                                {file.mimeType.split('/')[1]} file
+                                {file.mimeType.split("/")[1]} file
                               </div>
                             </div>
                           </div>
@@ -759,7 +1094,20 @@ const ZoroVault = () => {
                             <motion.button
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
-                              onClick={() => openDeleteDialog(file._id, file.filename)}
+                              onClick={() =>
+                                openShareDialog(file._id, file.filename)
+                              }
+                              className="inline-flex items-center px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-indigo-500/20 to-purple-500/20 text-indigo-400 hover:from-indigo-500/30 hover:to-purple-500/30 border border-indigo-500/30 hover:border-indigo-400/50 rounded-xl transition-all duration-300 backdrop-blur-sm group/btn"
+                            >
+                              <Share className="w-4 h-4 mr-2 group-hover/btn:translate-y-[-1px] transition-transform duration-300" />
+                              Share
+                            </motion.button>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() =>
+                                openDeleteDialog(file._id, file.filename)
+                              }
                               className="inline-flex items-center px-4 py-2.5 text-sm font-medium bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 hover:from-red-500/30 hover:to-pink-500/30 border border-red-500/30 hover:border-red-400/50 rounded-xl transition-all duration-300 backdrop-blur-sm group/btn"
                             >
                               <Trash2 className="w-4 h-4 mr-2 group-hover/btn:translate-y-[-1px] transition-transform duration-300" />
@@ -784,9 +1132,21 @@ const ZoroVault = () => {
           className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm px-4"
         >
           {[
-            { icon: <Shield className="w-4 h-4" />, text: "End-to-End Encrypted", color: "text-cyan-400" },
-            { icon: <Database className="w-4 h-4" />, text: "Secure Cloud Storage", color: "text-blue-400" },
-            { icon: <Zap className="w-4 h-4" />, text: "Lightning Fast Access", color: "text-indigo-400" }
+            {
+              icon: <Shield className="w-4 h-4" />,
+              text: "End-to-End Encrypted",
+              color: "text-cyan-400",
+            },
+            {
+              icon: <Database className="w-4 h-4" />,
+              text: "Secure Cloud Storage",
+              color: "text-blue-400",
+            },
+            {
+              icon: <Zap className="w-4 h-4" />,
+              text: "Lightning Fast Access",
+              color: "text-indigo-400",
+            },
           ].map((stat, index) => (
             <motion.div
               key={index}
@@ -801,7 +1161,7 @@ const ZoroVault = () => {
                   duration: 8,
                   repeat: Infinity,
                   delay: index * 0.5,
-                  ease: "linear"
+                  ease: "linear",
                 }}
                 className={stat.color}
               >
@@ -810,6 +1170,42 @@ const ZoroVault = () => {
               <span className="text-slate-300 font-medium">{stat.text}</span>
             </motion.div>
           ))}
+
+          {/* Debug button for development */}
+          {process.env.NODE_ENV === "development" && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 1.2, duration: 0.5 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                // Simulate receiving a shared file notification
+                const mockNotification = {
+                  data: {
+                    senderName: "Test User",
+                    fileName: "test-document.pdf",
+                    fileSize: 2.5 * 1024 * 1024, // 2.5 MB
+                  },
+                };
+
+                // Trigger the notification and count update
+                window.dispatchEvent(
+                  new CustomEvent("vaultFileSharedReceived", {
+                    detail: { notification: mockNotification },
+                  })
+                );
+
+                toast.success("🧪 Test shared file notification triggered!", {
+                  duration: 2000,
+                });
+              }}
+              className="flex items-center gap-2 px-4 py-3 bg-orange-500/20 backdrop-blur-md rounded-xl border border-orange-500/30 hover:border-orange-500/50 transition-all duration-300 text-orange-400 hover:text-orange-300"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="text-xs font-medium">Test Notification</span>
+            </motion.button>
+          )}
         </motion.div>
       </div>
 
@@ -819,6 +1215,25 @@ const ZoroVault = () => {
         onClose={closeDeleteDialog}
         onConfirm={handleDelete}
         fileName={deleteDialog.fileName}
+      />
+
+      {/* Share File Dialog */}
+      <UserShareDialog
+        isOpen={shareDialog.isOpen}
+        onClose={closeShareDialog}
+        onShare={handleShare}
+        fileName={shareDialog.fileName}
+      />
+
+      {/* Shared Files Panel */}
+      <SharedFilesPanel
+        isOpen={sharedFilesPanel}
+        onClose={() => {
+          setSharedFilesPanel(false);
+          // Refresh count when panel closes
+          setTimeout(fetchSharedFilesCount, 300);
+        }}
+        onFileProcessed={fetchSharedFilesCount} // Real-time count updates
       />
     </div>
   );

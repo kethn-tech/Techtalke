@@ -28,10 +28,18 @@ const allowedMimeTypes = [
 ];
 
 const fileFilter = (req, file, cb) => {
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Allow all supported types plus some additional common formats
+  const isAllowed =
+    allowedMimeTypes.includes(file.mimetype) ||
+    file.mimetype.startsWith("image/") ||
+    file.mimetype.startsWith("text/") ||
+    file.mimetype.includes("json") ||
+    file.mimetype.includes("xml");
+
+  if (isAllowed) {
     cb(null, true);
   } else {
-    cb(new Error('Unsupported file type')); // Filter out other types
+    cb(new Error(`Unsupported file type: ${file.mimetype}`)); // More descriptive error
   }
 };
 
