@@ -1,4 +1,4 @@
-# Development Dockerfile for Client
+# Development Dockerfile for Server
 FROM node:18-alpine
 
 # Set working directory
@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install ALL dependencies (including dev dependencies)
 RUN npm install
 
 # Copy source code
@@ -20,7 +20,7 @@ RUN chown -R nodejs:nodejs /app
 USER nodejs
 
 # Expose port
-EXPOSE 5173
+EXPOSE 4000
 
-# Start Vite dev server with hot reload
+# Start with nodemon for hot reload
 CMD ["npm", "run", "dev"]

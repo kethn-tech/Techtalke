@@ -1,0 +1,81 @@
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6.0
+    container_name: techtalke-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: techtalke_secure_password
+      MONGO_INITDB_DATABASE: techtalke_chat
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - techtalke-network
+
+  # Redis (only for production)
+  redis:
+    image: redis:7-alpine
+    container_name: techtalke-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - techtalke-network
+    profiles:
+      - production
+
+  # Backend Server
+  server:
+    build:
+      context: ./Server
+      dockerfile: Dockerfile.dev
+    container_name: techtalke-server
+    restart: unless-stopped
+    env_file:
+      - ./Server/.env
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./Server:/app
+      - /app/node_modules
+    networks:
+      - techtalke-network
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+  # Frontend Client
+  client:
+    build:
+      context: ./Client
+      dockerfile: Dockerfile.dev
+    container_name: techtalke-client
+    restart: unless-stopped
+    env_file:
+      - ./Client/.env
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    volumes:
+      - ./Client:/app
+      - /app/node_modules
+    networks:
+      - techtalke-network
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  techtalke-network:
+    driver: bridge

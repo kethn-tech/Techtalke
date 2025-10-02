@@ -19,8 +19,19 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    // Verify the token using the correct JWT secret
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
+    // Verify the token using the JWT secret from environment variables
+    const jwtSecret = process.env.JWT_SECRET || process.env.JWT_KEY;
+    
+    if (!jwtSecret) {
+      console.error("❌ JWT secret not configured in environment variables");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error",
+        code: "JWT_SECRET_MISSING"
+      });
+    }
+    
+    const decoded = jwt.verify(token, jwtSecret);
     
     // Attach user info to request object
     req.id = decoded.id;

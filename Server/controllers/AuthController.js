@@ -32,9 +32,20 @@ const logIn = async (req, res) => {
       });
     }
 
+    // Use JWT_SECRET from environment variables (with fallback for backward compatibility)
+    const jwtSecret = process.env.JWT_SECRET || process.env.JWT_KEY;
+    
+    if (!jwtSecret) {
+      console.error("❌ JWT secret not configured in environment variables");
+      return res.status(500).json({
+        success: false,
+        message: "Server configuration error"
+      });
+    }
+    
     const token = jwt.sign(
       { email: data.email, id: data._id.toString(), role: data.role },
-      process.env.JWT_KEY,
+      jwtSecret,
       { expiresIn: "3d" }
     );
 
@@ -196,7 +207,7 @@ const githubCallback = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { email: user.email, id: user._id.toString(), role: user.role },
-      process.env.JWT_KEY,
+      process.env.JWT_SECRET || process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 
@@ -272,7 +283,7 @@ const linkedinCallback = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { email: user.email, id: user._id.toString(), role: user.role },
-      process.env.JWT_KEY,
+      process.env.JWT_SECRET || process.env.JWT_KEY,
       { expiresIn: "3d" }
     );
 

@@ -71,5 +71,23 @@ pids/
 tmp/
 temp/
 
+# Security - Environment files
+Server/.env
+Client/.env
+Server/.env.*
+Client/.env.*
+!Server/env.example
+!Client/env.example
 
-docker-compose.yml
+# Docker secrets
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Database dumps
+*.sql
+*.dump
