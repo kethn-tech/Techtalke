@@ -41,7 +41,13 @@ const getGroupList = async (userId) => {
 // Create a new group
 router.post('/create', verifyToken, async (req, res) => {
   try {
-    const { name, description, members } = req.body;
+    const {
+      name,
+      description,
+      members,
+      type = "private",
+      settings = {},
+    } = req.body;
     const creatorId = req.user.id; // Changed from _id to id
 
     console.log('Group creation attempt:', {
@@ -56,7 +62,13 @@ router.post('/create', verifyToken, async (req, res) => {
       description,
       creator: creatorId,
       members: [...members, creatorId],
-      admins: [creatorId]
+      admins: [creatorId],
+      type,
+      settings: {
+        allowMemberInvite: settings.allowMemberInvite || false,
+        allowMessageDelete: settings.allowMessageDelete !== false,
+        allowMediaSharing: settings.allowMediaSharing !== false,
+      },
     });
 
     console.log('Group created:', group);
@@ -207,29 +219,65 @@ router.post('/:groupId/members', verifyToken, async (req, res) => {
 
     const group = await Group.findOne({
       _id: groupId,
-      admins: userId
+      admins: userId,
     });
 
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: 'Group not found or not authorized'
+        message: "Group not found or not authorized",
       });
     }
 
-    // Add new members
-    group.members = [...new Set([...group.members, ...members])];
+    // Validate members array
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid members array",
+      });
+    }
+
+    // Add new members (avoid duplicates)
+    const existingMemberIds = group.members.map((m) => m.toString());
+    const newMembers = members.filter(
+      (memberId) => !existingMemberIds.includes(memberId)
+    );
+
+    if (newMembers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "All selected users are already members",
+      });
+    }
+
+    group.members = [...group.members, ...newMembers];
+    group.lastActivity = new Date();
     await group.save();
 
     const updatedGroup = await Group.findById(groupId)
-      .populate('members', 'firstName lastName avatar')
-      .populate('creator', 'firstName lastName avatar');
+      .populate("members", "firstName lastName avatar")
+      .populate("creator", "firstName lastName avatar");
 
     res.json({
       success: true,
-      message: 'Members added successfully',
-      group: updatedGroup
+      message: `${newMembers.length} member(s) added successfully`,
+      group: updatedGroup,
     });
+
+    // 🌐 Notify all members about new additions
+    if (global.io && global.userSocketMap) {
+      const allMemberIds = updatedGroup.members.map((m) => m._id.toString());
+      for (const memberId of allMemberIds) {
+        const socketId = global.userSocketMap[memberId];
+        if (socketId) {
+          global.io.to(socketId).emit("groupMemberAdded", {
+            groupId: updatedGroup._id,
+            newMembers: newMembers,
+            group: updatedGroup,
+          });
+        }
+      }
+    }
   } catch (error) {
     console.error('Error adding members:', error);
     res.status(500).json({
@@ -240,11 +288,12 @@ router.post('/:groupId/members', verifyToken, async (req, res) => {
   }
 });
 
-// Remove member from group
-router.delete('/:groupId/members/:memberId', verifyToken, async (req, res) => {
+// Batch remove members from group
+router.post('/:groupId/members/remove', verifyToken, async (req, res) => {
   try {
-    const { groupId, memberId } = req.params;
-    const userId = req.user._id;
+    const { groupId } = req.params;
+    const { members } = req.body;
+    const userId = req.user.id;
 
     const group = await Group.findOne({
       _id: groupId,
@@ -258,10 +307,45 @@ router.delete('/:groupId/members/:memberId', verifyToken, async (req, res) => {
       });
     }
 
-    // Remove member
-    group.members = group.members.filter(member => member.toString() !== memberId);
-    // If member is admin, remove from admins as well
-    group.admins = group.admins.filter(admin => admin.toString() !== memberId);
+    // Validate members array
+    if (!Array.isArray(members) || members.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid members array'
+      });
+    }
+
+    // Prevent removing creator
+    if (members.includes(group.creator.toString())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot remove group creator'
+      });
+    }
+
+    // Remove members
+    const removedMembers = [];
+    members.forEach(memberId => {
+      const memberIndex = group.members.findIndex(m => m.toString() === memberId);
+      if (memberIndex !== -1) {
+        group.members.splice(memberIndex, 1);
+        removedMembers.push(memberId);
+      }
+      // Also remove from admins if they were admin
+      const adminIndex = group.admins.findIndex(a => a.toString() === memberId);
+      if (adminIndex !== -1) {
+        group.admins.splice(adminIndex, 1);
+      }
+    });
+
+    if (removedMembers.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid members to remove'
+      });
+    }
+
+    group.lastActivity = new Date();
     await group.save();
 
     const updatedGroup = await Group.findById(groupId)
@@ -270,9 +354,128 @@ router.delete('/:groupId/members/:memberId', verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Member removed successfully',
+      message: `${removedMembers.length} member(s) removed successfully`,
       group: updatedGroup
     });
+
+    // 🌐 Notify remaining members and removed members
+    if (global.io && global.userSocketMap) {
+      // Notify remaining members
+      const remainingMemberIds = updatedGroup.members.map(m => m._id.toString());
+      for (const memberId of remainingMemberIds) {
+        const socketId = global.userSocketMap[memberId];
+        if (socketId) {
+          global.io.to(socketId).emit('groupMemberRemoved', {
+            groupId: updatedGroup._id,
+            removedMembers: removedMembers,
+            group: updatedGroup
+          });
+        }
+      }
+
+      // Notify removed members
+      for (const memberId of removedMembers) {
+        const socketId = global.userSocketMap[memberId];
+        if (socketId) {
+          global.io.to(socketId).emit('groupMembershipRevoked', {
+            groupId: updatedGroup._id,
+            groupName: updatedGroup.name
+          });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error removing members:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove members',
+      error: error.message
+    });
+  }
+});
+
+// Remove member from group
+router.delete('/:groupId/members/:memberId', verifyToken, async (req, res) => {
+  try {
+    const { groupId, memberId } = req.params;
+    const userId = req.user.id; // Fixed: should be id not _id
+
+    const group = await Group.findOne({
+      _id: groupId,
+      admins: userId,
+    });
+
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found or not authorized",
+      });
+    }
+
+    // Prevent removing creator
+    if (group.creator.toString() === memberId) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot remove group creator",
+      });
+    }
+
+    // Remove member
+    const memberIndex = group.members.findIndex(
+      (member) => member.toString() === memberId
+    );
+    if (memberIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Member not found in group",
+      });
+    }
+
+    group.members.splice(memberIndex, 1);
+    // If member is admin, remove from admins as well
+    const adminIndex = group.admins.findIndex(
+      (admin) => admin.toString() === memberId
+    );
+    if (adminIndex !== -1) {
+      group.admins.splice(adminIndex, 1);
+    }
+
+    group.lastActivity = new Date();
+    await group.save();
+
+    const updatedGroup = await Group.findById(groupId)
+      .populate("members", "firstName lastName avatar")
+      .populate("creator", "firstName lastName avatar");
+
+    res.json({
+      success: true,
+      message: "Member removed successfully",
+      group: updatedGroup,
+    });
+
+    // 🌐 Notify all members about removal
+    if (global.io && global.userSocketMap) {
+      const memberIds = updatedGroup.members.map((m) => m._id.toString());
+      for (const mId of memberIds) {
+        const socketId = global.userSocketMap[mId];
+        if (socketId) {
+          global.io.to(socketId).emit("groupMemberRemoved", {
+            groupId: updatedGroup._id,
+            removedMembers: [memberId],
+            group: updatedGroup,
+          });
+        }
+      }
+
+      // Notify removed member
+      const removedSocketId = global.userSocketMap[memberId];
+      if (removedSocketId) {
+        global.io.to(removedSocketId).emit("groupMembershipRevoked", {
+          groupId: updatedGroup._id,
+          groupName: updatedGroup.name,
+        });
+      }
+    }
   } catch (error) {
     console.error('Error removing member:', error);
     res.status(500).json({

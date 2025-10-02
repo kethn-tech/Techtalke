@@ -106,12 +106,15 @@ const ChatHeader = () => {
     >
       {/* Futuristic glowing background */}
       <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-blue-500/5 to-indigo-500/5 pointer-events-none" />
-      
+
       {/* Subtle tech grid pattern */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `radial-gradient(circle at 1px 1px, rgb(99 102 241) 1px, transparent 0)`,
-        backgroundSize: '15px 15px'
-      }} />
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(99 102 241) 1px, transparent 0)`,
+          backgroundSize: "15px 15px",
+        }}
+      />
 
       {/* Close button with modern styling */}
       <motion.button
@@ -135,7 +138,6 @@ const ChatHeader = () => {
               {/* Glowing avatar ring */}
               <div className="relative inset-0 bg-gradient-to-r from-cyan-400/30 via-blue-500/30 to-indigo-500/30 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              
               <Avatar className="relative h-12 w-12 ring-3 ring-slate-600/50 group-hover:ring-cyan-400/60 transition-all duration-300 shadow-xl">
                 {selectedChatData?.image || selectedChatData?.avatar ? (
                   <AvatarImage
@@ -149,7 +151,7 @@ const ChatHeader = () => {
                   </div>
                 )}
               </Avatar>
-              
+
               {/* Advanced online status */}
               {selectedChatType === "dm" &&
                 selectedChatData &&
@@ -158,8 +160,7 @@ const ChatHeader = () => {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     className="absolute -bottom-0.5 -right-0.5"
-                  >
-                  </motion.div>
+                  ></motion.div>
                 )}
             </motion.div>
 
@@ -174,24 +175,64 @@ const ChatHeader = () => {
 
               <div className="flex items-center gap-2">
                 {selectedChatType === "group" ? (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs text-slate-300 font-medium"
-                  >
-                    {selectedChatData?.members?.length || 0} members
-                  </motion.p>
+                  <div className="flex items-center gap-2">
+                    {/* Member Avatars Preview */}
+                    <div className="flex items-center -space-x-1">
+                      {selectedChatData?.members
+                        ?.slice(0, 3)
+                        .map((member, index) => (
+                          <motion.div
+                            key={member._id || index}
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="relative"
+                          >
+                            <Avatar className="h-5 w-5 ring-1 ring-slate-600 hover:ring-cyan-400/60 transition-all duration-200">
+                              {member.avatar ? (
+                                <AvatarImage
+                                  src={member.avatar}
+                                  className="object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                                  <UserCircle2 className="w-2.5 h-2.5 text-gray-300" />
+                                </div>
+                              )}
+                            </Avatar>
+                          </motion.div>
+                        ))}
+                      {selectedChatData?.members?.length > 3 && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className="h-5 w-5 bg-slate-700 rounded-full flex items-center justify-center text-xs text-slate-300 font-medium ring-1 ring-slate-600"
+                        >
+                          +{selectedChatData.members.length - 3}
+                        </motion.div>
+                      )}
+                    </div>
+
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs text-slate-300 font-medium"
+                    >
+                      {selectedChatData?.members?.length || 0} members
+                    </motion.p>
+                  </div>
                 ) : (
                   <>
                     <motion.div
                       animate={{
                         scale: [1, 1.2, 1],
-                        opacity: [1, 0.8, 1]
+                        opacity: [1, 0.8, 1],
                       }}
                       transition={{
                         duration: 2,
                         repeat: Infinity,
-                        repeatType: "loop"
+                        repeatType: "loop",
                       }}
                       className={`w-2 h-2 rounded-full ${
                         selectedChatType === "dm" &&
@@ -299,8 +340,8 @@ const ChatHeader = () => {
                       boxShadow: [
                         "0 0 20px rgba(6, 182, 212, 0.3)",
                         "0 0 30px rgba(59, 130, 246, 0.4)",
-                        "0 0 20px rgba(6, 182, 212, 0.3)"
-                      ]
+                        "0 0 20px rgba(6, 182, 212, 0.3)",
+                      ],
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                     className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-semibold backdrop-blur-md border transition-all duration-300 ${
@@ -310,7 +351,9 @@ const ChatHeader = () => {
                     }`}
                   >
                     {filteredCount > 0
-                      ? `✨ ${filteredCount} message${filteredCount !== 1 ? "s" : ""} found`
+                      ? `✨ ${filteredCount} message${
+                          filteredCount !== 1 ? "s" : ""
+                        } found`
                       : "❌ No messages found"}
                   </motion.span>
                 </motion.div>

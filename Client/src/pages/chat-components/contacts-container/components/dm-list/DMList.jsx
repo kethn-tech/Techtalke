@@ -1,8 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "@/store/store";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { UserCircle2, MessageCircle, Hash, Users } from "lucide-react";
+import {
+  UserCircle2,
+  MessageCircle,
+  Hash,
+  Users,
+  MoreVertical,
+  Settings,
+  UserPlus,
+  Trash2,
+  Eye,
+  Pin,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import GroupProfileView from "../group-profile-view";
+import { toast } from "sonner";
+import apiClient from "@/lib/apiClient";
 
 // Note: This component is now integrated into the main ContactsContainer
 // This is a standalone version for reference
@@ -17,31 +39,98 @@ const DMList = () => {
     setSelectedChatType,
     unreadMessages,
     onlineUsers,
+    userInfo,
+    removeGroup,
   } = useStore();
+
+  const [showGroupProfile, setShowGroupProfile] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+
+  const handleGroupAction = (action, group, event) => {
+    event?.stopPropagation();
+
+    switch (action) {
+      case "viewProfile":
+        setSelectedGroup(group);
+        setShowGroupProfile(true);
+        break;
+      case "deleteGroup":
+        handleDeleteGroup(group);
+        break;
+      case "leaveGroup":
+        handleLeaveGroup(group);
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleDeleteGroup = async (group) => {
+    try {
+      const res = await apiClient.delete(`/api/groups/${group._id}`);
+      if (res.data.success) {
+        removeGroup(group._id);
+        toast.success("Group deleted successfully!");
+      }
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      toast.error("Failed to delete group");
+    }
+  };
+
+  const handleLeaveGroup = async (group) => {
+    try {
+      const res = await apiClient.delete(
+        `/api/groups/${group._id}/members/${userInfo._id}`
+      );
+      if (res.data.success) {
+        removeGroup(group._id);
+        toast.success("Left group successfully!");
+      }
+    } catch (error) {
+      console.error("Error leaving group:", error);
+      toast.error("Failed to leave group");
+    }
+  };
+
+  const isGroupAdmin = (group) => {
+    return (
+      group?.admins?.includes(userInfo?._id) ||
+      group?.creator?._id === userInfo?._id
+    );
+  };
+
+  const isGroupCreator = (group) => {
+    return group?.creator?._id === userInfo?._id;
+  };
 
   // Unified contacts combining DMs and Groups
   const allContacts = React.useMemo(() => {
     const validDmContacts = Array.isArray(dmContacts) ? dmContacts : [];
     const validGroups = Array.isArray(groups) ? groups : [];
-    
-    const dmList = validDmContacts.map(contact => ({
+
+    const dmList = validDmContacts.map((contact) => ({
       ...contact,
-      type: 'dm',
-      displayName: `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || contact.email,
+      type: "dm",
+      displayName:
+        `${contact.firstName || ""} ${contact.lastName || ""}`.trim() ||
+        contact.email,
       isOnline: onlineUsers?.includes(contact._id) || false,
-      unreadCount: unreadMessages?.[contact._id] || 0
+      unreadCount: unreadMessages?.[contact._id] || 0,
     }));
 
-    const groupList = validGroups.map(group => ({
+    const groupList = validGroups.map((group) => ({
       ...group,
-      type: 'group',
+      type: "group",
       displayName: group.name,
       isOnline: false,
-      unreadCount: unreadMessages?.[group._id] || 0
+      unreadCount: unreadMessages?.[group._id] || 0,
     }));
 
     const combined = [...dmList, ...groupList];
-    return combined.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    return combined.sort(
+      (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
   }, [dmContacts, groups, onlineUsers, unreadMessages]);
 
   const handleClick = (contact) => {
@@ -74,7 +163,7 @@ const DMList = () => {
     <div className="space-y-2">
       {allContacts.map((contact, index) => {
         const isSelected = selectedChatData?._id === contact._id;
-        const isGroup = contact.type === 'group';
+        const isGroup = contact.type === "group";
 
         return (
           <motion.div
@@ -168,36 +257,151 @@ const DMList = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    contact.isOnline && !isGroup
-                      ? "bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-400/50"
-                      : isGroup
-                      ? "bg-gradient-to-r from-indigo-400 to-purple-500"
-                      : "bg-slate-500"
-                  }`}
-                />
-                <p
-                  className={`text-xs truncate transition-colors duration-300 ${
-                    isSelected
-                      ? "text-slate-300"
-                      : "text-slate-400 group-hover:text-slate-300"
-                  }`}
-                >
-                  {isGroup 
-                    ? `${contact.members?.length || 0} members`
-                    : contact.isOnline ? "Online" : "Offline"
-                  }
-                </p>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      contact.isOnline && !isGroup
+                        ? "bg-gradient-to-r from-green-400 to-emerald-500 shadow-lg shadow-green-400/50"
+                        : isGroup
+                        ? "bg-gradient-to-r from-indigo-400 to-purple-500"
+                        : "bg-slate-500"
+                    }`}
+                  />
+                  <p
+                    className={`text-xs truncate transition-colors duration-300 ${
+                      isSelected
+                        ? "text-slate-300"
+                        : "text-slate-400 group-hover:text-slate-300"
+                    }`}
+                  >
+                    {isGroup
+                      ? `${contact.members?.length || 0} members`
+                      : contact.isOnline
+                      ? "Online"
+                      : "Offline"}
+                  </p>
+                </div>
+
+                {/* Group member avatars preview */}
+                {isGroup && contact.members && contact.members.length > 0 && (
+                  <div className="flex items-center -space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {contact.members.slice(0, 3).map((member, memberIndex) => (
+                      <motion.div
+                        key={member._id || memberIndex}
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: memberIndex * 0.05 }}
+                      >
+                        <Avatar className="h-4 w-4 ring-1 ring-slate-700 hover:ring-slate-500 transition-all duration-200">
+                          {member.avatar ? (
+                            <AvatarImage
+                              src={member.avatar}
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-gray-600 to-gray-700 flex items-center justify-center">
+                              <UserCircle2 className="w-2 h-2 text-gray-400" />
+                            </div>
+                          )}
+                        </Avatar>
+                      </motion.div>
+                    ))}
+                    {contact.members.length > 3 && (
+                      <div className="h-4 w-4 bg-slate-600 rounded-full flex items-center justify-center text-[8px] text-slate-300 font-medium ring-1 ring-slate-700">
+                        +{contact.members.length - 3}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Group Actions Menu */}
+            {isGroup && (
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-full"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <MoreVertical className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="bg-gray-800/95 backdrop-blur-md border-gray-700 shadow-xl"
+                    align="end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenuItem
+                      onClick={(e) =>
+                        handleGroupAction("viewProfile", contact, e)
+                      }
+                      className="text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer"
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Profile
+                    </DropdownMenuItem>
+
+                    {isGroupAdmin(contact) && (
+                      <>
+                        <DropdownMenuItem className="text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer">
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Add Members
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-gray-300 hover:bg-gray-700 hover:text-white cursor-pointer">
+                          <Settings className="w-4 h-4 mr-2" />
+                          Group Settings
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
+                    <DropdownMenuSeparator className="bg-gray-700" />
+
+                    {isGroupCreator(contact) ? (
+                      <DropdownMenuItem
+                        onClick={(e) =>
+                          handleGroupAction("deleteGroup", contact, e)
+                        }
+                        className="text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Group
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem
+                        onClick={(e) =>
+                          handleGroupAction("leaveGroup", contact, e)
+                        }
+                        className="text-orange-400 hover:bg-orange-500/20 hover:text-orange-300 cursor-pointer"
+                      >
+                        <UserMinus className="w-4 h-4 mr-2" />
+                        Leave Group
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             {/* Hover effect overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </motion.div>
         );
       })}
+
+      {/* Group Profile Modal */}
+      <GroupProfileView
+        group={selectedGroup}
+        open={showGroupProfile}
+        onOpenChange={(open) => {
+          setShowGroupProfile(open);
+          if (!open) setSelectedGroup(null);
+        }}
+      />
     </div>
   );
 };
