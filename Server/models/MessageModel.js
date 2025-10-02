@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { encrypt, decrypt } = require('../utils/simpleEncryption');
+const { encrypt, decrypt, legacyDecrypt } = require('../utils/simpleEncryption');
 
 const messageSchema = new mongoose.Schema({
     sender: {
@@ -56,19 +56,45 @@ const messageSchema = new mongoose.Schema({
 
 // Encrypt content before saving
 messageSchema.pre('save', function(next) {
-    if (this.isModified('content') && this.content && this.messageType === 'text') {
-        this.content = encrypt(this.content);
+    if ((this.isModified('content') || this._needsReencryption) && this.content && this.messageType === 'text') {
+        try {
+            this.content = encrypt(this.content);
+            
+            // Clear the re-encryption flag
+            this._needsReencryption = undefined;
+            
+            if (this._needsReencryption) {
+                console.log(`Re-encrypted message ${this._id} with new secure encryption`);
+            }
+        } catch (error) {
+            console.error('Encryption failed for message:', this._id, error.message);
+            return next(error);
+        }
     }
     next();
 });
 
-// Decrypt content after loading from DB
+// Decrypt content after loading from DB with backward compatibility
 messageSchema.post('init', function(doc) {
     if (doc.content && doc.messageType === 'text') {
         try {
+            // Try new encryption first
             doc.content = decrypt(doc.content);
         } catch (e) {
-            // ignore decryption errors
+            try {
+                // Fallback to legacy encryption for existing data
+                doc.content = legacyDecrypt(doc.content);
+                
+                // Mark for re-encryption on next save
+                doc._needsReencryption = true;
+            } catch (legacyError) {
+                console.error('Failed to decrypt message content with both methods:', {
+                    messageId: doc._id,
+                    newError: e.message,
+                    legacyError: legacyError.message
+                });
+                // Leave content as-is if both methods fail
+            }
         }
     }
 });

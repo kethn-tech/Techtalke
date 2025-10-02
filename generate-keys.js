@@ -12,6 +12,7 @@ function generateJWTSecret() {
 }
 
 function generateEncryptionKey() {
+  // Generate a cryptographically secure 256-bit (32-byte) key
   return crypto.randomBytes(32).toString('hex');
 }
 
