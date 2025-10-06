@@ -1,5 +1,5 @@
 // Client/src/pages/CodeEditor/CodeEditor.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useStore } from '@/store/store';
 import { useSocket } from "@/context/SocketContext";

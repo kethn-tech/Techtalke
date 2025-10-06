@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import NewDm from "./components/new-dm";
 import ProfileInfo from "./components/profile-info";
 import apiClient from "@/lib/apiClient";

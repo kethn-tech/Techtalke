@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   SendHorizontal,
@@ -318,3 +319,16 @@ export function ChatSuggestions({
     </motion.div>
   );
 }
+
+ChatSuggestions.propTypes = {
+  suggestions: PropTypes.arrayOf(
+    PropTypes.shape({
+      category: PropTypes.string,
+      text: PropTypes.string.isRequired,
+    })
+  ),
+  onSuggestionClick: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool,
+  showCategories: PropTypes.bool,
+  maxVisible: PropTypes.number,
+};

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useStore } from "@/store/store";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";

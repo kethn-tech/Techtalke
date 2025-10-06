@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
 import { UserCircle2, Search, X } from "lucide-react";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";

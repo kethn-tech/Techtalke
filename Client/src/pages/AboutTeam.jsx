@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Code, Users, Target, Zap, Mail, MapPin, Briefcase, Calendar, Award, ChevronRight, Sparkles, Rocket, Brain, Heart } from "lucide-react";
