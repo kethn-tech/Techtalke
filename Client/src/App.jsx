@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import PropTypes from "prop-types";
 import Auth from "./pages/Auth";
 import Chat from "./pages/Chat";
 import Profile from "./pages/Profile";
@@ -31,10 +30,6 @@ const ProtectedRoutes = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/auth" />;
 };
 
-ProtectedRoutes.propTypes = {
-  children: PropTypes.node.isRequired,
-};
-
 // Reroutes authenticated users from the auth page to the chat or profile page
 const AuthRoutes = ({ children }) => {
   const { userInfo } = useStore();
@@ -45,10 +40,6 @@ const AuthRoutes = ({ children }) => {
     return profileIsSetup ? <Navigate to="/chat" /> : <Navigate to="/profile" />;
   }
   return children;
-};
-
-AuthRoutes.propTypes = {
-  children: PropTypes.node.isRequired,
 };
 
 // Protects routes that require an admin user
@@ -65,10 +56,6 @@ const AdminProtectedRoutes = ({ children }) => {
     return <Navigate to="/chat" />;
   }
   return children;
-};
-
-AdminProtectedRoutes.propTypes = {
-  children: PropTypes.node.isRequired,
 };
 
 const App = () => {

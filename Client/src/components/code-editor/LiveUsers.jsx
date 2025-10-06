@@ -1,5 +1,5 @@
 // Client/src/components/code-editor/LiveUsers.jsx
-import PropTypes from 'prop-types';
+import React from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -111,21 +111,6 @@ const LiveUsers = ({ participants, typingUsers = new Set() }) => {
       )}
     </div>
   );
-};
-
-LiveUsers.propTypes = {
-  participants: PropTypes.arrayOf(
-    PropTypes.shape({
-      userId: PropTypes.string.isRequired,
-      username: PropTypes.string.isRequired,
-      color: PropTypes.string.isRequired,
-      cursor: PropTypes.shape({
-        line: PropTypes.number,
-        column: PropTypes.number,
-      }),
-    })
-  ).isRequired,
-  typingUsers: PropTypes.instanceOf(Set),
 };
 
 export default LiveUsers;

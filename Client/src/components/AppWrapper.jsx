@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
-import PropTypes from "prop-types";
+import React, { useState, useEffect } from "react";
 import { useStore } from "@/store/store";
-import { onMaintenanceModeChange, checkMaintenanceStatus } from "@/lib/apiClient";
+import {
+  onMaintenanceModeChange,
+  checkMaintenanceStatus,
+} from "@/lib/apiClient";
 import MaintenanceScreen from "@/components/MaintenanceScreen";
 import PinSetup from "@/components/ui/PinSetup";
 import PinVerify from "@/components/ui/PinVerify";
@@ -75,10 +77,13 @@ const AppWrapper = ({ children }) => {
   if (isCheckingMaintenance) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+               {" "}
         <div className="text-center">
+                   {" "}
           <div className="animate-spin w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4" />
-          <p className="text-slate-400">Loading...</p>
+                    <p className="text-slate-400">Loading...</p>       {" "}
         </div>
+             {" "}
       </div>
     );
   }
@@ -102,9 +107,4 @@ const AppWrapper = ({ children }) => {
   // Otherwise render normal application
   return <>{children}</>;
 };
-
-AppWrapper.propTypes = {
-  children: PropTypes.node.isRequired,
-};
-
 export default AppWrapper;

@@ -1,5 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
-import PropTypes from "prop-types";
+import { useState, useRef, useEffect } from "react";
 import { Avatar } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
@@ -298,7 +297,3 @@ export function AIChat({ onClose }) {
     </Card>
   );
 }
-
-AIChat.propTypes = {
-  onClose: PropTypes.func.isRequired,
-};
