@@ -1,0 +1,87 @@
+name: Hotfix Deployment
+
+on:
+  push:
+    branches: [ hotfix/* ]
+  workflow_dispatch:
+
+jobs:
+  hotfix-deploy:
+    name: Deploy Hotfix
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/hotfix/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Extract hotfix info
+      id: hotfix
+      run: |
+        BRANCH_NAME=${GITHUB_REF#refs/heads/}
+        HOTFIX_VERSION=${BRANCH_NAME#hotfix/}
+        echo "version=$HOTFIX_VERSION" >> $GITHUB_OUTPUT
+        echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push hotfix images
+      run: |
+        # Build client
+        docker build -t ghcr.io/${{ github.repository }}-client:hotfix-${{ steps.hotfix.outputs.version }} ./Client
+        docker push ghcr.io/${{ github.repository }}-client:hotfix-${{ steps.hotfix.outputs.version }}
+        
+        # Build server
+        docker build -t ghcr.io/${{ github.repository }}-server:hotfix-${{ steps.hotfix.outputs.version }} ./Server
+        docker push ghcr.io/${{ github.repository }}-server:hotfix-${{ steps.hotfix.outputs.version }}
+    
+    - name: Deploy hotfix to production
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.PRODUCTION_HOST }}
+        username: ${{ secrets.PRODUCTION_USER }}
+        key: ${{ secrets.PRODUCTION_SSH_KEY }}
+        script: |
+          cd /opt/techtalke
+          
+          # Create emergency backup
+          docker-compose exec mongodb mongodump --out /backup/hotfix_$(date +%Y%m%d_%H%M%S)
+          
+          # Pull hotfix images
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker pull ghcr.io/${{ github.repository }}-client:hotfix-${{ steps.hotfix.outputs.version }}
+          docker pull ghcr.io/${{ github.repository }}-server:hotfix-${{ steps.hotfix.outputs.version }}
+          
+          # Update images in production
+          export CLIENT_IMAGE="ghcr.io/${{ github.repository }}-client:hotfix-${{ steps.hotfix.outputs.version }}"
+          export SERVER_IMAGE="ghcr.io/${{ github.repository }}-server:hotfix-${{ steps.hotfix.outputs.version }}"
+          
+          envsubst < docker-compose.production.yml > docker-compose.hotfix.yml
+          docker-compose -f docker-compose.hotfix.yml up -d
+          
+          # Immediate health check
+          sleep 30
+          curl -f http://localhost:4000/health || exit 1
+          
+          echo "Hotfix ${{ steps.hotfix.outputs.version }} deployed successfully!"
+    
+    - name: Notify team
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: |
+          Hotfix ${{ steps.hotfix.outputs.version }} deployment: ${{ job.status }}
+          Branch: ${{ steps.hotfix.outputs.branch }}
+          Commit: ${{ github.sha }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

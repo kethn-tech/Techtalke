@@ -1,0 +1,181 @@
+name: Performance & Monitoring
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+
+jobs:
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install dependencies
+      run: |
+        cd Client
+        npm ci
+        cd ../Server
+        npm ci
+    
+    - name: Install Artillery
+      run: npm install -g artillery
+    
+    - name: Run load tests
+      run: |
+        # Create artillery test config
+        cat > artillery-test.yml << EOF
+        config:
+          target: 'http://localhost:4000'
+          phases:
+            - duration: 60
+              arrivalRate: 10
+          defaults:
+            headers:
+              Content-Type: 'application/json'
+        scenarios:
+          - name: 'API Load Test'
+            requests:
+              - get:
+                  url: '/health'
+              - post:
+                  url: '/api/auth/login'
+                  json:
+                    email: 'test@example.com'
+                    password: 'testpassword'
+        EOF
+        
+        # Start server in background
+        cd Server
+        npm start &
+        SERVER_PID=$!
+        sleep 10
+        
+        # Run artillery test
+        artillery run ../artillery-test.yml --output report.json
+        artillery report report.json --output report.html
+        
+        # Stop server
+        kill $SERVER_PID
+    
+    - name: Upload performance results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-report
+        path: |
+          report.html
+          report.json
+
+  lighthouse-audit:
+    name: Lighthouse Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Build and serve app
+      run: |
+        cd Client
+        npm ci
+        npm run build
+        npm install -g serve
+        serve -s dist -l 3000 &
+        sleep 10
+    
+    - name: Run Lighthouse CI
+      uses: treosh/lighthouse-ci-action@v11
+      with:
+        urls: |
+          http://localhost:3000
+        configPath: './.lighthouserc.json'
+        uploadArtifacts: true
+        temporaryPublicStorage: true
+
+  docker-security-scan:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build images
+      run: |
+        docker build -t techtalke-client:security-scan ./Client
+        docker build -t techtalke-server:security-scan ./Server
+    
+    - name: Run Trivy scan on Client image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'techtalke-client:security-scan'
+        format: 'sarif'
+        output: 'trivy-client.sarif'
+    
+    - name: Run Trivy scan on Server image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'techtalke-server:security-scan'
+        format: 'sarif'
+        output: 'trivy-server.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: |
+          trivy-client.sarif
+          trivy-server.sarif
+
+  uptime-monitoring:
+    name: Uptime Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - name: Check production endpoints
+      run: |
+        echo "Checking production endpoints..."
+        
+        # Check main application
+        if curl -f --max-time 30 https://techtalke.app/health; then
+          echo "✅ Main application is healthy"
+        else
+          echo "❌ Main application is down"
+          exit 1
+        fi
+        
+        # Check API endpoints
+        if curl -f --max-time 30 https://api.techtalke.app/health; then
+          echo "✅ API is healthy"
+        else
+          echo "❌ API is down"
+          exit 1
+        fi
+    
+    - name: Notify on failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#alerts'
+        text: |
+          🚨 UPTIME ALERT 🚨
+          Production services are down!
+          Time: $(date)
+          Please investigate immediately.
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
